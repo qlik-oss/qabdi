@@ -1,0 +1,80 @@
+{{- if .Values.brokerservice.enabled }}
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "bdi.brokerservice.fullname" . }}
+  labels:
+    app: {{ template "bdi.brokerservice.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ template "bdi.brokerservice.fullname" . }}
+  template:
+    metadata:
+      labels:
+        name: {{ template "bdi.brokerservice.fullname" . }}
+    spec:
+      containers:
+      - name: {{ template "bdi.brokerservice.fullname" . }}
+        image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command: ["/home/ubuntu/dist/data_broker/abdi_data_broker"]
+        args:
+        - -e
+        - "$(HOST_IP)"
+        - -r
+{{- if .Values.autostartServices }}
+        - "{{ template "bdi.registry.fullname" . }}"
+{{- else}}
+        - "{{ template "bdi.indexingmanager.fullname" . }}"
+{{- end}}
+        - -l
+        - "{{.Values.acceptLicense}}"
+        ports:
+        - containerPort: {{ .Values.brokerservice.containerPort }}
+          hostPort: {{ .Values.brokerservice.hostPort }}
+        env:
+        {{- if .Values.sourcecloudgw.enabled }}
+        - name: SOURCE_GW_KEY
+          value: {{ .Values.sourcecloudgw.accessKey | quote }}
+        - name: SOURCE_GW_SECRET
+          value: {{ .Values.sourcecloudgw.secretKey | quote }}
+        {{- end }}
+        {{- if .Values.outputcloudgw.enabled }}
+        - name: OUTPUT_GW_KEY
+          value: {{ .Values.outputcloudgw.accessKey | quote }}
+        - name: OUTPUT_GW_SECRET
+          value: {{ .Values.outputcloudgw.secretKey | quote }}
+        {{- end }}
+        - name: HOST_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        volumeMounts:
+          - mountPath: {{ .Values.data.path }}
+            name: data-pv
+          - mountPath: {{ .Values.output.path }}
+            name: output-pv
+      volumes:
+        {{- if .Values.data.persistence.enabled }}
+        - name: data-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.persistence.existingClaim | default (include "bdi.data.fullname" .) }}
+        {{ else }}
+        - name: data-pv
+          hostPath:
+            path: {{ .Values.data.persistence.folder }}
+        {{- end }}
+        {{- if .Values.output.persistence.enabled }}
+        - name: output-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.output.persistence.existingClaim | default (include "bdi.output.fullname" .) }}
+        {{ else }}
+        - name: output-pv
+          hostPath:
+            path: {{ .Values.output.persistence.folder }}
+        {{- end }}
+{{- end }}

@@ -1,0 +1,65 @@
+{{- if .Values.sourcecloudgw.enabled }}
+{{- if eq .Values.sourcecloudgw.gateway "gcs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.sourcecloudgw.fullname" . }}
+  labels:
+    app: {{ template "bdi.sourcecloudgw.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "bdi.sourcecloudgw.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.sourcecloudgw.fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+      - name: gcs-cm
+        configMap:
+          name: "gcs-cm"
+      containers:
+      - name: {{ template "bdi.sourcecloudgw.fullname" . }}
+        image: minio/minio
+        args:
+        - gateway
+        - {{ .Values.sourcecloudgw.gateway | quote }}
+        - {{ .Values.google.projectId | quote }}
+        volumeMounts:
+        - name: gcs-cm
+          mountPath: "/config/cloud" 
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: {{ .Values.sourcecloudgw.accessKey | quote }}
+        - name: MINIO_SECRET_KEY
+          value: {{ .Values.sourcecloudgw.secretKey | quote }}
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.sourcecloudgw.accessKey | quote }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.sourcecloudgw.secretKey | quote }}
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/config/cloud/credentials.json"
+        ports:
+        - containerPort: 9000
+
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 60
+          periodSeconds: 15
+
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 30
+{{- end }}
+{{- end }}

@@ -1,0 +1,70 @@
+{{- if .Values.outputcloudgw.enabled }}
+{{- if ne .Values.outputcloudgw.gateway "gcs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.outputcloudgw.fullname" . }}
+  labels:
+    app: {{ template "bdi.outputcloudgw.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "bdi.outputcloudgw.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.outputcloudgw.fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      volumes:
+      {{- if eq .Values.outputcloudgw.gateway "" }}
+      - name: output
+        persistentVolumeClaim:
+          claimName: {{ template "bdi.outputcloudgw.fullname" . }}
+      {{- end }}
+      containers:
+      - name: {{ template "bdi.outputcloudgw.fullname" . }}
+        image: minio/minio
+        {{- if ne .Values.outputcloudgw.gateway "" }}
+        args:
+        - gateway
+        - {{ .Values.outputcloudgw.gateway | quote }}
+        {{- else}}
+        volumeMounts:
+        - name: output
+          mountPath: "/output"
+        args:
+          - server
+          - "/output"
+        {{- end }}
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: {{ .Values.outputcloudgw.accessKey | quote }}
+        - name: MINIO_SECRET_KEY
+          value: {{ .Values.outputcloudgw.secretKey | quote }}
+        - name: AWS_ACCESS_KEY_ID
+          value: {{ .Values.outputcloudgw.accessKey | quote }}
+        - name: AWS_SECRET_ACCESS_KEY
+          value: {{ .Values.outputcloudgw.secretKey | quote }}
+        ports:
+        - containerPort: 9000
+
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 60
+          periodSeconds: 15
+
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 5
+          periodSeconds: 30
+{{- end }}
+{{- end }}

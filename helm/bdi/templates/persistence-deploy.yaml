@@ -1,0 +1,191 @@
+{{- if .Values.autostartServices }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.persistence.fullname" . }}
+  labels:
+    app: {{ template "bdi.persistence.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{ $replicaCount := 1 }}
+{{- if .Values.persistence }}{{- if .Values.persistence.replicaCount }}
+{{ $replicaCount := .Values.persistence.replicaCount }}
+{{- end }}{{- end }}
+  replicas: {{ $replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.persistence.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.persistence.fullname" . }}
+        release: {{ .Release.Name }}
+{{- if .Values.persistence }}{{- if .Values.persistence.annotations }}
+      annotations:
+{{ toYaml .Values.persistence.annotations | indent 8 }}
+{{- end }}{{- end }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+{{- if .Values.persistence }}
+{{- if .Values.persistence.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.persistence.additionalAffinities | indent 8 }}
+{{- end }}
+      {{- with .Values.persistence.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      tolerations:
+{{ toYaml .Values.persistence.tolerations | indent 8 }}
+{{- end }}
+      containers:
+        - name: {{ template "bdi.persistence.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/home/ubuntu/dist/persistence/abdi_persistence"]
+          args:
+            - -l
+            - "{{.Values.acceptLicense}}"
+            - -a
+            - "{{ template "bdi.persistence.fullname" . }}"
+          env:
+          - name: ACCEPT_QULA
+            value: {{ .Values.acceptLicense | quote }}
+          {{- if .Values.persistence }} {{- if .Values.persistence.resources}}
+          {{- if .Values.persistence.resources.requests }}
+          {{- if .Values.persistence.resources.requests.cpu }}
+          - name: INDEXING_VCPU_REQUEST
+            value: {{ .Values.persistence.resources.requests.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.persistence.resources.requests.memory }}
+          - name: INDEXING_MEMORY_REQUEST
+            value: {{ .Values.persistence.resources.requests.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.persistence.resources.limits }}
+          {{- if .Values.persistence.resources.limits.cpu }}
+          - name: INDEXING_VCPU_LIMIT
+            value: {{ .Values.persistence.resources.limits.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.persistence.resources.limits.memory }}
+          - name: INDEXING_MEMORY_LIMIT
+            value: {{ .Values.persistence.resources.limits.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- end }}{{- end }}
+          {{- if hasKey .Values.persistence.config "serverThreads" }}
+          - name: ASYNC_SERVER_THREADS
+            value: "{{ .Values.persistence.config.serverThreads | default 1  }}"
+          {{- end }}
+          {{- if hasKey .Values.persistence.config "threadsPerConcurrentQueue" }}
+          - name: THREADS_PER_CQ
+            value: "{{ .Values.persistence.config.threadsPerConcurrentQueue | default 1  }}"
+          {{- end }}
+          - name: LICENSE_URI
+            value: "{{ template "bdi.license.fullname" . }}:9200"
+          - name: REGISTRY_URI
+            value: "{{ template "bdi.registry.fullname" . }}:55057"
+          - name: KUBERNETES_MODE
+            value: "true"
+          - name: POD_NAME
+            value: "{{ template "bdi.persistence.fullname" . }}"
+# Source data
+          - name: DATASET_NAME
+            value: "{{ .Values.data.name }}"
+          - name: FIELD_MAPPING_PATH
+            value: "{{ .Values.data.fieldMappingFileName | default "" }}"
+          - name: SOURCEDATA_PATH
+            value: "{{ .Values.data.path }}"
+{{- if .Values.sourcecloudgw.enabled }}
+          - name: SOURCEDATA_CLOUD_PATH
+            value: "{{ .Values.data.cloudPath }}"
+          - name: SOURCE_GATEWAY_URI
+            value: "{{ template "bdi.sourcecloudgw.fullname" . }}:9000"
+          - name: SOURCE_GW_KEY
+            value: {{ .Values.sourcecloudgw.accessKey | quote }}
+          - name: SOURCE_GW_SECRET
+            value: {{ .Values.sourcecloudgw.secretKey | quote }}
+{{- end }}
+# Output data
+          - name: OUTPUT_ROOT_PATH
+            value: "{{ .Values.output.path }}"
+{{- if .Values.outputcloudgw.enabled }}
+          - name: OUTPUT_CLOUD_PATH
+            value: "{{ .Values.output.cloudPath }}"
+          - name: OUTPUT_GATEWAY_URI
+            value: "{{ template "bdi.outputcloudgw.fullname" . }}:9000"
+          - name: OUTPUT_GW_KEY
+            value: {{ .Values.outputcloudgw.accessKey | quote }}
+          - name: OUTPUT_GW_SECRET
+            value: {{ .Values.outputcloudgw.secretKey | quote }}
+{{- end }}
+# Indexer settings
+          - name: INDEXER_COLUMN_INDEX_THREADS
+            value: "{{ .Values.indexer.config.serverThreads | default 1  }}"
+# Symbol server settings
+          - name: SYMBOL_SERVER_THREADS
+            value: "{{ .Values.symbolserver.config.serverThreads | default 1  }}"
+          - name: SYMBOL_SERVER_OPTIONS_FILE
+            value: ""
+# Internal settings
+{{- if hasKey .Values "internal" }}
+          {{- if hasKey .Values.internal "useConnector" }}
+          - name: INDEXING_MANAGER_USE_CONNECTOR
+            value: "{{ .Values.internal.useConnector }}"
+          - name: INDEXER_USE_CONNECTOR
+            value: "{{ .Values.internal.useConnector }}"
+          - name: SYMBOL_SERVER_CREATION_USE_CONNECTOR
+            value: "{{ .Values.internal.useConnector }}"
+          {{- end }}
+
+          {{- if hasKey .Values.internal "parallellSymbolCreation" }}
+          - name: SYMBOL_SERVER_PARALLELL_SYMBOL_CREATION
+            value: "{{ .Values.internal.parallellSymbolCreation }}"
+          {{- end }}
+
+          {{- if hasKey .Values.internal "enableSort" }}
+          - name: SYMBOL_SERVER_ENABLE_SORT
+            value: "{{ .Values.internal.enableSort | default false  }}"
+          {{- end }}
+
+          {{- if hasKey .Values.internal "enable_internal_test" }}
+          - name: ENABLE_INTERNAL_TEST
+            value: "{{ .Values.internal.enable_internal_test }}"
+          - name: INDEXER_ROWS_LIMIT
+            value: "{{ .Values.internal.rowsLimit | default 0  }}"
+          {{- end }}
+{{- end }}
+
+          ports:
+            - name: persistence
+              containerPort: 55010
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:55010", "-service=readiness"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+{{- if .Values.persistence }} {{- if .Values.persistence.resources}}
+          resources:
+{{ toYaml .Values.persistence.resources | indent 12 }}
+ {{- end }} {{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.output.path }}
+              name: output-pv
+      volumes:
+        {{- if .Values.output.persistence.enabled }}
+        - name: output-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.output.persistence.existingClaim | default (include "bdi.output.fullname" .) }}
+        {{ else }}
+        - name: output-pv
+          hostPath:
+            path: {{ .Values.output.persistence.folder }}
+        {{- end }}
+{{- end}}

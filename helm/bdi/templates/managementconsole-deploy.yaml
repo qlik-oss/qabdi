@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.managementconsole.fullname" . }}
+  labels:
+    app: {{ template "bdi.managementconsole.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.managementconsole.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.managementconsole.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.managementconsole.fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+{{ toYaml .Values.managementconsole.annotations | indent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.managementconsole.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.managementconsole.additionalAffinities | indent 8 }}
+      {{- end }}
+      {{- with .Values.managementconsole.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      tolerations:
+{{ toYaml .Values.managementconsole.tolerations | indent 8 }}
+      containers:
+        - name: {{ template "bdi.managementconsole.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/home/ubuntu/dist/management_console/mgmtsrv"]
+          args: [
+            "-path", "/home/ubuntu/dist/management_console/assets/",
+            "-api-host", "{{ template "bdi.restapi.fullname" . }}",
+            "-api-port", "8080"
+          ]
+          env:
+            - name: ACCEPT_QULA
+              value: {{ .Values.acceptLicense | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            privileged: {{ .Values.image.privileged }}
+          resources:
+{{ toYaml .Values.managementconsole.resources | indent 12 }}
+          volumeMounts:
+            []
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+      volumes:
+        []

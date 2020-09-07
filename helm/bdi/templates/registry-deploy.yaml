@@ -1,0 +1,147 @@
+{{- if .Values.autostartServices }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.registry.fullname" . }}
+  labels:
+    app: {{ template "bdi.registry.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{ $replicaCount := 1 }}
+{{- if .Values.registry }}{{- if .Values.registry.replicaCount }}
+{{ $replicaCount := .Values.registry.replicaCount }}
+{{- end }}{{- end }}
+  replicas: {{ $replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.registry.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.registry.fullname" . }}
+        release: {{ .Release.Name }}
+{{- if .Values.registry }}{{- if .Values.registry.annotations }}
+      annotations:
+{{ toYaml .Values.registry.annotations | indent 8 }}
+{{- end }}{{- end }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+{{- if .Values.registry }}
+    {{- if .Values.registry.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.registry.additionalAffinities | indent 8 }}
+      {{- end }}
+      {{- with .Values.registry.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+    {{- if .Values.registry.tolerations }}
+      tolerations:
+{{ toYaml .Values.registry.tolerations | indent 8 }}
+      {{- end }}
+      {{- end }}
+      containers:
+        - name: {{ template "bdi.registry.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/home/ubuntu/dist/registry/abdi_registry"]
+          args:
+            - -l
+            - "{{.Values.acceptLicense}}"
+            - -a
+            - "{{ template "bdi.registry.fullname" . }}"
+          env:
+          - name: KUBERNETES_MODE
+            value: "true"
+          - name: ACCEPT_QULA
+            value: {{ .Values.acceptLicense | quote }}
+          {{- if .Values.registry }}{{- if .Values.registry.resources }}
+          {{- if .Values.registry.resources.requests }}
+          {{- if .Values.registry.resources.requests.cpu }}
+          - name: INDEXING_VCPU_REQUEST
+            value: {{ .Values.registry.resources.requests.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.registry.resources.requests.memory }}
+          - name: INDEXING_MEMORY_REQUEST
+            value: {{ .Values.registry.resources.requests.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.registry.resources.limits }}
+          {{- if .Values.registry.resources.limits.cpu }}
+          - name: INDEXING_VCPU_LIMIT
+            value: {{ .Values.registry.resources.limits.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.registry.resources.limits.memory }}
+          - name: INDEXING_MEMORY_LIMIT
+            value: {{ .Values.registry.resources.limits.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- end }}{{- end }}
+          {{- if .Values.registry.config }}
+          {{- if hasKey .Values.registry.config "serverThreads" }}
+          - name: ASYNC_SERVER_THREADS
+            value: "{{ .Values.registry.config.serverThreads | default 1  }}"
+          {{- end }}
+          {{- if hasKey .Values.registry.config "threadsPerConcurrentQueue" }}
+          - name: THREADS_PER_CQ
+            value: "{{ .Values.registry.config.threadsPerConcurrentQueue | default 1  }}"
+          {{- end }}
+          {{- end }}
+          ports:
+            - name: registry
+              containerPort: 55057
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:55057", "-service=readiness"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+{{- if .Values.registry }}{{- if .Values.registry.resources }}
+          resources:
+{{ toYaml .Values.registry.resources | indent 12 }}
+{{- end }}{{- end }}
+          volumeMounts:
+            - mountPath: {{ .Values.data.path }}
+              name: data-pv
+            - mountPath: {{ .Values.output.path }}
+              name: output-pv
+            {{- if .Values.cache.enabled }}
+            - mountPath: {{ .Values.cache.path }}
+              name: cache-pv
+            {{- end }}
+            - name: logging-volume
+              mountPath: /etc/config/logging
+      volumes:
+        {{- if .Values.data.persistence.enabled }}
+        - name: data-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.persistence.existingClaim | default (include "bdi.data.fullname" .) }}
+        {{ else }}
+        - name: data-pv
+          hostPath:
+            path: {{ .Values.data.persistence.folder }}
+        {{- end }}
+        {{- if .Values.output.persistence.enabled }}
+        - name: output-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.output.persistence.existingClaim | default (include "bdi.output.fullname" .) }}
+        {{ else }}
+        - name: output-pv
+          hostPath:
+            path: {{ .Values.output.persistence.folder }}
+        {{- end }}
+        {{- if .Values.cache.enabled }}
+        - name: cache-pv
+          hostPath:
+            path: {{ .Values.cache.folder }}
+        {{- end }}
+        - name: logging-volume
+          configMap:
+            name: {{ template "bdi.registry.logging.fullname" . }}
+{{- end}}

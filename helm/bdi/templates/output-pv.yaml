@@ -1,0 +1,34 @@
+{{- if and .Values.output.persistence.enabled .Values.output.persistence.volume.enabled }}
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: {{ template "bdi.output.fullname" . }}
+spec:
+  accessModes:
+    - {{ .Values.output.persistence.accessMode | quote }}
+  capacity:
+    storage: {{ .Values.output.persistence.size | quote }}
+  claimRef:
+    name: {{ template "bdi.output.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+  {{- if .Values.output.persistence.storageClass }}
+  {{- if (eq "-" .Values.output.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.output.persistence.storageClass }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.output.persistence.volume.reclaimPolicy }}
+  persistentVolumeReclaimPolicy: {{ .Values.output.persistence.volume.reclaimPolicy }}
+  {{- end }}
+  {{- if .Values.output.persistence.volume.mountOptions }}
+  mountOptions:
+    {{- range .Values.output.persistence.volume.mountOptions }}
+    - {{ . }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.output.persistence.mode }}
+  volumeMode: {{ .Values.output.persistence.mode }}
+  {{- end }}
+{{toYaml .Values.output.persistence.volume.plugin | indent 2 }}
+{{- end }}

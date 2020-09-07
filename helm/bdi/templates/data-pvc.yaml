@@ -1,0 +1,24 @@
+{{- if and .Values.data.persistence.enabled (not .Values.data.persistence.existingClaim) }}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ template "bdi.data.fullname" . }}
+spec:
+  accessModes:
+    - {{ .Values.data.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.data.persistence.size | quote }}
+  {{- if .Values.data.persistence.storageClass }}
+  {{- if (eq "-" .Values.data.persistence.storageClass) }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.data.persistence.storageClass }}
+  {{- end }}
+  {{- else if .Values.data.persistence.volume.enabled }}
+  storageClassName: ""
+  {{- end }}
+  {{- if .Values.data.persistence.mode }}
+  volumeMode: {{ .Values.data.persistence.mode }}
+  {{- end }}
+{{- end }}

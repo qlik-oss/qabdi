@@ -1,0 +1,12 @@
+By setting `acceptLicense` to true, you have accepted Qlik's User License Agreement. It can be found as LICENSE.txt in this package or at https://www.qlik.com/us/legal/license-terms.
+
+{{- if .Values.config }}
+{{- if .Values.config.indexing }}
+{{- if .Values.config.indexing.additionalSettings }}
+
+⚠️   DEPRECATION NOTICE
+
+The value `config.indexing.additionalSettings` has been removed. Configuration for indexing should be done within the management console.
+{{- end }}
+{{- end }}
+{{- end }}

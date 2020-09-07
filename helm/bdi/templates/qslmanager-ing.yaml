@@ -1,0 +1,32 @@
+{{- if .Values.qslmanager.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: {{ template "bdi.qslmanager.fullname" . }}
+  labels:
+    app: {{ template "bdi.qslmanager.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: GRPC
+    {{- range $key, $value := .Values.qslmanager.ingress.annotations }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /manager
+            backend:
+              serviceName: {{ template "bdi.qslmanager.fullname" . }}
+              servicePort: qslmanager-ext
+      {{- if .Values.qslmanager.ingress.host }}
+      host: {{ .Values.qslmanager.ingress.host }}
+      {{- end -}}
+  {{- if .Values.qslmanager.ingress.tls }}
+  tls:
+{{ toYaml .Values.qslmanager.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}

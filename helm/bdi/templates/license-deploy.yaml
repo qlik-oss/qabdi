@@ -1,0 +1,61 @@
+{{- template "bdi.license.required" . }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.license.fullname" . }}
+  labels:
+    app: {{ template "bdi.license.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ default 1 .Values.license.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.license.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.license.fullname" . }}
+        release: {{ .Release.Name }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ default .Values.image.registry .Values.license.registry }}/{{ default "licenses" .Values.license.repository }}:{{ default "3.17.0" .Values.license.tag }}"
+          imagePullPolicy: "{{ default .Values.image.pullPolicy .Values.license.imagePullPolicy }}"
+          env:
+            - name: ABDI_MODE
+              value: "true"
+            - name: NATS_ENABLED
+              value: "false"
+            - name: LICENSE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ template "bdi.license.fullname" . }}
+                  key: key
+          {{- if .Values.license.offline }}
+          args:
+            - -offline
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 9200
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+          {{- if .Values.license.resources }}
+          resources:
+{{ toYaml .Values.license.resources | indent 12}}
+          {{- end }}

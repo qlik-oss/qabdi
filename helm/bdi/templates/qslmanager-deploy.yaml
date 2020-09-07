@@ -1,0 +1,233 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.qslmanager.fullname" . }}
+  labels:
+    app: {{ template "bdi.qslmanager.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.qslmanager.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.qslmanager.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.qslmanager.fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+{{ toYaml .Values.qslmanager.annotations | indent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.qslmanager.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.qslmanager.additionalAffinities | indent 8 }}
+      {{- end }}
+      {{- with .Values.qslmanager.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      tolerations:
+{{ toYaml .Values.qslmanager.tolerations | indent 8 }}
+      containers:
+        - name: {{ template "bdi.qslmanager.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.autostartServices }}
+          command: ["/home/ubuntu/dist/qsl_processor/qsl_processor_tool"]
+          args:	         
+          - -m 
+          - "manager"
+          - -a 
+          - "{{ template "bdi.qslmanager.fullname" . }}"  
+          - -p 
+          - "55000"
+          - -i 
+          - "55001"
+          - -o 
+          - "8080"
+          - -r
+          - "{{ template "bdi.qslexecutor.fullname" . }}"
+          - -x
+          - "44000"
+          - -c 
+          - "/etc/config/qslmanager.json"
+          - -l 
+          - "{{.Values.acceptLicense}}"
+          env:
+          - name: KUBERNETES_MODE
+            value: "true"
+{{- else }}
+          command: ['sh', '-c']
+          args:
+            - env > /etc/environment && /usr/sbin/sshd -D
+          env:
+{{- end }}
+          - name: ACCEPT_QULA
+            value: {{ .Values.acceptLicense | quote }}
+          {{- $redis := index .Values "redis-ha" }}
+          {{- if $redis.enabled }}
+          - name: KVS_HOST
+            value: {{ template "bdi.redis.fullname" . }}
+          - name: KVS_PORT
+            value: {{ $redis.sentinel.port | quote }}
+          {{- if and $redis.auth }}
+          - name: KVS_AUTH
+            valueFrom:
+              secretKeyRef:
+              {{- if $redis.existingSecret }}
+                name: {{ $redis.existingSecret }}
+              {{- else }}
+                name: {{ template "bdi.redis.fullname" . }}
+              {{- end }}
+                key: {{ $redis.authKey | quote }}
+          {{- end }}
+          - name: KVS_MASTER_NAME
+            value: {{ $redis.redis.masterGroupName | quote }}
+          {{- end }}
+          {{- if .Values.qslmanager.resources.requests }}
+          {{- if .Values.qslmanager.resources.requests.cpu }}
+          - name: QBDI_VCPU_REQUEST
+            value: {{ .Values.qslmanager.resources.requests.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.qslmanager.resources.requests.memory }}
+          - name: QBDI_MEMORY_REQUEST
+            value: {{ .Values.qslmanager.resources.requests.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.qslmanager.resources.limits }}
+          {{- if .Values.qslmanager.resources.limits.cpu }}
+          - name: QBDI_VCPU_LIMIT
+            value: {{ .Values.qslmanager.resources.limits.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.qslmanager.resources.limits.memory }}
+          - name: QBDI_MEMORY_LIMIT
+            value: {{ .Values.qslmanager.resources.limits.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.qslmanager.tls.enabled }}
+          - name: QSL_MANAGER_TLS_CERT_PATH
+            value: "/home/ubuntu/tls"
+          {{- end }}
+          {{- if .Values.sourcecloudgw.enabled }}
+          - name: SOURCE_GW_KEY
+            value: {{ .Values.sourcecloudgw.accessKey | quote }}
+          - name: SOURCE_GW_SECRET
+            value: {{ .Values.sourcecloudgw.secretKey | quote }}
+          {{- end }}
+          {{- if .Values.outputcloudgw.enabled }}
+          - name: OUTPUT_GW_KEY
+            value: {{ .Values.outputcloudgw.accessKey | quote }}
+          - name: OUTPUT_GW_SECRET
+            value: {{ .Values.outputcloudgw.secretKey | quote }}
+          {{- end }}
+          - name: ENABLE_CRASH_DUMP
+            value: {{ .Values.enableCrashDumpUpload | quote }}
+          ports:
+            - name: external
+              containerPort: 55000
+              protocol: TCP
+            - name: internal
+              containerPort: 55001
+              protocol: TCP
+            - name: results
+              containerPort: 55002
+              protocol: TCP
+            - name: roaring-1
+              containerPort: 65000
+              protocol: TCP
+            - name: roaring-2
+              containerPort: 65001
+              protocol: TCP
+{{- if not (.Values.autostartServices) }}
+            {{- if .Values.qslmanager.service.ssh.enabled }}
+            - name: ssh
+              containerPort: 22
+              protocol: TCP
+            {{- end }}
+{{- end }}
+          securityContext:
+            privileged: {{ .Values.image.privileged }}
+            {{- if .Values.enableCrashDumpUpload }}
+            capabilities:
+              add:
+                - SYS_PTRACE
+            {{- end }}
+          {{- if .Values.autostartServices }}
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:55001", "-service=readiness"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          {{- end }}  
+          resources:
+{{ toYaml .Values.qslmanager.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: {{ .Values.data.path }}
+              name: data-pv
+            - mountPath: {{ .Values.output.path }}
+              name: output-pv
+            {{- if .Values.cache.enabled }}
+            - mountPath: {{ .Values.cache.path }}
+              name: cache-pv
+            {{- end }}
+            {{- if .Values.qslmanager.tls.enabled }}
+            - mountPath: /home/ubuntu/tls
+              name: tls
+              readOnly: true
+            {{- end }}
+            {{- if .Values.autostartServices }}
+            - name: config-volume
+              mountPath: /etc/config
+            {{- end }}
+      volumes:
+        {{- if .Values.data.persistence.enabled }}
+        - name: data-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.persistence.existingClaim | default (include "bdi.data.fullname" .) }}
+        {{ else }}
+        - name: data-pv
+          hostPath:
+            path: {{ .Values.data.persistence.folder }}
+        {{- end }}
+        {{- if .Values.output.persistence.enabled }}
+        - name: output-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.output.persistence.existingClaim | default (include "bdi.output.fullname" .) }}
+        {{ else }}
+        - name: output-pv
+          hostPath:
+            path: {{ .Values.output.persistence.folder }}
+        {{- end }}
+        {{- if .Values.cache.enabled }}
+        - name: cache-pv
+          hostPath:
+            path: {{ .Values.cache.folder }}
+        {{- end }}
+        {{- if .Values.autostartServices }}
+        - name: config-volume
+          configMap:
+            name: {{ template "bdi.qsl.config.fullname" . }}
+        {{- end }}
+
+        {{- if .Values.qslmanager.tls.enabled }}
+        - name: tls
+          secret:
+            secretName: {{ template "bdi.qslmanager.fullname" . }}
+            defaultMode: 0400
+            items:
+              - key: certificate
+                path: bdi_server_cert.pem
+              - key: key
+                path: bdi_server_key.pem
+              {{- if .Values.qslmanager.tls.rootCert }}
+              - key: rootCert
+                path: root_cert.pem
+              {{- end }}
+        {{- end }}

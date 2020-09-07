@@ -1,0 +1,8 @@
+apiVersion: v1
+appVersion: 4.191.39
+description: Big Data Index
+maintainers:
+- name: PA BDI
+  url: https://qlikdev.slack.com/channels/dev-bdi-buildstatus
+name: bdi
+version: 4.19.18

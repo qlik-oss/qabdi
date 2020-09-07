@@ -1,0 +1,194 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi.qslexecutor.fullname" . }}
+  labels:
+    app: {{ template "bdi.qslexecutor.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.qslexecutor.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.qslexecutor.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.qslexecutor.fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+{{ toYaml .Values.qslexecutor.annotations | indent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.qslexecutor.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.qslexecutor.additionalAffinities | indent 8 }}
+      {{- end }}
+      {{- with .Values.qslexecutor.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+      tolerations:
+{{ toYaml .Values.qslexecutor.tolerations | indent 8 }}
+      containers:
+        - name: {{ template "bdi.qslexecutor.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.autostartServices }}
+          command: ["/home/ubuntu/dist/qsl_processor/qsl_processor_tool"]
+          args:	    
+          - -m
+          - "registry_executor"
+          - -a 
+          - "{{ template "bdi.qslexecutor.fullname" . }}"
+          - -p 
+          - "44000"
+          - -o 
+          - "8080"
+          - -c 
+          - "/etc/config/qslexecutor.json"
+          - -l 
+          - "{{.Values.acceptLicense}}"
+          env:
+          - name: KUBERNETES_MODE
+            value: "true"
+{{- else}}
+          command: ['sh', '-c']
+          args:
+            - env > /etc/environment && /usr/sbin/sshd -D
+          env:
+{{- end }}
+          - name: ACCEPT_QULA
+            value: {{ .Values.acceptLicense | quote }}
+          {{- $redis := index .Values "redis-ha" }}
+          {{- if $redis.enabled }}
+          - name: KVS_HOST
+            value: {{ template "bdi.redis.fullname" . }}
+          - name: KVS_PORT
+            value: {{ $redis.sentinel.port | quote }}
+          {{- if and $redis.auth }}
+          - name: KVS_AUTH
+            valueFrom:
+              secretKeyRef:
+              {{- if $redis.existingSecret }}
+                name: {{ $redis.existingSecret }}
+              {{- else }}
+                name: {{ template "bdi.redis.fullname" . }}
+              {{- end }}
+                key: {{ $redis.authKey | quote }}
+          {{- end }}
+          - name: KVS_MASTER_NAME
+            value: {{ $redis.redis.masterGroupName | quote }}
+          {{- end }}
+          {{- if .Values.qslexecutor.resources.requests }}
+          {{- if .Values.qslexecutor.resources.requests.cpu }}
+          - name: QBDI_VCPU_REQUEST
+            value: {{ .Values.qslexecutor.resources.requests.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.qslexecutor.resources.requests.memory }}
+          - name: QBDI_MEMORY_REQUEST
+            value: {{ .Values.qslexecutor.resources.requests.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.qslexecutor.resources.limits }}
+          {{- if .Values.qslexecutor.resources.limits.cpu }}
+          - name: QBDI_VCPU_LIMIT
+            value: {{ .Values.qslexecutor.resources.limits.cpu | default "" | quote }}
+          {{- end }}
+          {{- if .Values.qslexecutor.resources.limits.memory }}
+          - name: QBDI_MEMORY_LIMIT
+            value: {{ .Values.qslexecutor.resources.limits.memory | default "" | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .Values.sourcecloudgw.enabled }}
+          - name: SOURCE_GW_KEY
+            value: {{ .Values.sourcecloudgw.accessKey | quote }}
+          - name: SOURCE_GW_SECRET
+            value: {{ .Values.sourcecloudgw.secretKey | quote }}
+          {{- end }}
+          {{- if .Values.outputcloudgw.enabled }}
+          - name: OUTPUT_GW_KEY
+            value: {{ .Values.outputcloudgw.accessKey | quote }}
+          - name: OUTPUT_GW_SECRET
+            value: {{ .Values.outputcloudgw.secretKey | quote }}
+          {{- end }}
+          - name: ENABLE_CRASH_DUMP
+            value: {{ .Values.enableCrashDumpUpload | quote }}
+          ports:
+            - name: qslexecutor
+              containerPort: 44000
+              protocol: TCP
+            - name: qslexecutor-r
+              containerPort: 54000
+              protocol: TCP
+{{- if not (.Values.autostartServices) }}
+            {{- if .Values.qslexecutor.service.ssh.enabled }}
+            - name: ssh
+              containerPort: 22
+              protocol: TCP
+            {{- end }}
+{{- end }}
+          securityContext:
+            privileged: {{ .Values.image.privileged }}
+            {{- if .Values.enableCrashDumpUpload }}
+            capabilities:
+              add:
+                - SYS_PTRACE
+            {{- end }}
+          {{- if .Values.autostartServices }}
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:44000", "-service=readiness"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          {{- end }}  
+          resources:
+{{ toYaml .Values.qslexecutor.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: {{ .Values.data.path }}
+              name: data-pv
+            - mountPath: {{ .Values.output.path }}
+              name: output-pv
+            {{- if .Values.cache.enabled }}
+            - mountPath: {{ .Values.cache.path }}
+              name: cache-pv
+            {{- end }}
+            {{- if .Values.autostartServices }}
+            - name: config-volume
+              mountPath: /etc/config
+            {{- end }}
+      volumes:
+        {{- if .Values.data.persistence.enabled }}
+        - name: data-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.persistence.existingClaim | default (include "bdi.data.fullname" .) }}
+        {{ else }}
+        - name: data-pv
+          hostPath:
+            path: {{ .Values.data.persistence.folder }}
+        {{- end }}
+        {{- if .Values.output.persistence.enabled }}
+        - name: output-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.output.persistence.existingClaim | default (include "bdi.output.fullname" .) }}
+        {{ else }}
+        - name: output-pv
+          hostPath:
+            path: {{ .Values.output.persistence.folder }}
+        {{- end }}
+        {{- if .Values.cache.enabled }}
+        - name: cache-pv
+          hostPath:
+            path: {{ .Values.cache.folder }}
+        {{- end }}
+        {{- if .Values.autostartServices }}
+        - name: config-volume
+          configMap:
+            name: {{ template "bdi.qsl.config.fullname" . }}
+        {{- end }}
+

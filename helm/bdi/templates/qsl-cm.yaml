@@ -1,0 +1,72 @@
+{{- if .Values.autostartServices }}
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "bdi.qsl.config.fullname" . }}
+data:
+  qslcommon.json: |-
+    {
+      "indexerRegistry"         : "{{ template "bdi.registry.fullname" . }}:55057",
+      "indexerRegistryHost"     : "{{ template "bdi.registry.fullname" . }}",
+      "qslRegistry"             : "{{ template "bdi.qslexecutor.fullname" . }}:44000",
+      "qslRegistryHost"         : "{{ template "bdi.qslexecutor.fullname" . }}",
+      "path2DMSchemaFile"       : "{{ .Values.output.path }}/config/indexer",
+      "path2IndexletStorage"    : "{{ .Values.output.path }}/IndexOutput",
+      "path2A2AStorageRoot"     : "{{ .Values.output.path }}/A2AOutput",
+      "path2SymbolPositions"    : "",
+{{- range $key, $val:= .Values.qslcommon.jsonStr }}
+{{ $key | quote | indent 6}}    : {{ $val | quote }},
+{{- end}}
+{{- range $key, $val:= .Values.qslcommon.json }}
+{{ $key | quote | indent 6}}    : {{ $val }},
+{{- end}}
+      "END-OF-JSON": "CONFIG-FILE"
+    }
+
+  qslexecutor.json: |-
+    {
+      "path2GeneralConfigFile"  : "/etc/config/qslcommon.json",
+      "path4LogFiles"           : "/tmp/log/qslexecutor",
+{{- range $key, $val:= .Values.qslexecutor.jsonStr }}
+{{ $key | quote | indent 6}}    : {{ $val | quote }},
+{{- end}}
+{{- range $key, $val:= .Values.qslexecutor.json }}
+{{ $key | quote | indent 6}}    : {{ $val }},
+{{- end}}
+      "END-OF-JSON": "CONFIG-FILE"
+    }
+
+  qslmanager.json: |-
+    {
+      "path2GeneralConfigFile"  : "/etc/config/qslcommon.json",
+      "path4LogFiles"           : "/tmp/log/qslmanager",
+      "path2ModelStorage"       : "{{ .Values.output.path }}/config/indexer",
+      "path2DataStorage"        : "{{ .Values.data.path }}",
+      "path2SymbolStorage"      : "{{ .Values.output.path }}/SymbolOutput",
+      "path2SymbolPositions"    : "{{ .Values.output.path }}/SymbolPositions",
+      "path4HandleStorage"      : "{{ .Values.output.path }}/qsl_handles",
+      "path2A2AStorage"         : "{{ .Values.output.path }}/A2AOutput",
+{{- range $key, $val:= .Values.qslmanager.jsonStr }}
+{{ $key | quote | indent 6}}    : {{ $val | quote }},
+{{- end}}
+{{- range $key, $val:= .Values.qslmanager.json }}
+{{ $key | quote | indent 6}}    : {{ $val }},
+{{- end}}
+      "END-OF-JSON": "CONFIG-FILE"
+    }
+
+  qslworker.json: |-
+    {
+      "path2GeneralConfigFile"  : "/etc/config/qslcommon.json",
+      "path4LogFiles"           : "/tmp/log/qslworker",
+      "workerIndexletCachePath" : "/tmp/cache/indexlets",
+{{- range $key, $val:= .Values.qslworker.jsonStr }}
+{{ $key | quote | indent 6}}    : {{ $val | quote }},
+{{- end}}
+{{- range $key, $val:= .Values.qslworker.json }}
+{{ $key | quote | indent 6}}    : {{ $val }},
+{{- end}}
+      "END-OF-JSON": "CONFIG-FILE"
+    }
+
+{{- end}}

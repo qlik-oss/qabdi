@@ -1,0 +1,9 @@
+dependencies:
+- name: nginx-ingress
+  version: 1.39.0
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  condition: nginx-ingress.enabled
+- name: redis-ha
+  version: 3.6.1
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  condition: redis-ha.enabled

@@ -1,0 +1,23 @@
+{{- if .Values.autostartServices }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "bdi.persistence.fullname" . }}
+  labels:
+    app: {{ template "bdi.persistence.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{- if .Values.persistence }}{{- if .Values.persistence.service }}
+  type: {{ .Values.persistence.service.type }}
+{{- end }}{{- end }}
+  ports:
+    - port: 55010
+      targetPort: persistence
+      protocol: TCP
+      name: persistence
+  selector:
+    app: {{ template "bdi.persistence.fullname" . }}
+    release: {{ .Release.Name }}
+{{- end}}

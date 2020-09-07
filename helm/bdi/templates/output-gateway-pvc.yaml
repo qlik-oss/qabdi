@@ -1,0 +1,14 @@
+{{- if .Values.outputcloudgw.enabled }}
+{{- if eq .Values.outputcloudgw.gateway "" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ template "bdi.outputcloudgw.fullname" . }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.output.persistence.size | quote }}
+{{- end }}
+{{- end }}

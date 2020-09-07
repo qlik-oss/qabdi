@@ -1,0 +1,1792 @@
+# Default values for BDI.
+
+# This is a YAML-formatted file.
+
+# Declare variables to be passed into your templates.
+
+## BDI product image
+
+##
+
+image:
+  registry: qlik-docker-qabdi.bintray.io
+
+  repository: bdiproduct
+
+  tag: 4.191.39
+
+  # pullPolicy: IfNotPresent
+
+  ## Enable privileged mode for all pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/pods/pod/#privileged-mode-for-pod-containers
+
+  privileged: false
+
+## Secrets for pulling images from a private Docker registry.
+
+##
+
+imagePullSecrets:
+  - name: artifactory-docker-secret
+
+## Accept the Qlik User License Agreement (QULA)
+
+##
+
+acceptLicense: false
+
+autostartServices: false
+
+## License configuration for BDI.
+
+##
+
+license:
+  ## QBDI License key.
+
+  ##
+
+  key: ""
+
+## Enable crash handling including upload to dump server.
+
+##
+
+enableCrashDumpUpload: false
+
+## Configuration values for BDI Indexer components.
+
+##
+
+indexer:
+  ## Override the components name (defaults to indexer).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the indexer pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the indexer deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the indexer pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the indexer pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  config: {}
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Configuration for allowing services to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+  ## Strategy for StatefulSet updates (requires Kubernetes 1.6+)
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset
+
+  ##
+
+  updateStrategy: RollingUpdate
+
+  ## Pod Management strategy (requires Kubernetes 1.7+)
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+
+  ##
+
+  ## "OrderedReady" is default. "Parallel" means worker pods will launch or terminate
+
+  ## in parallel.
+
+  podManagementPolicy: Parallel
+
+## Configuration values for BDI Indexing Manager components.
+
+##
+
+indexingmanager:
+  ## Override the components name (defaults to indexingmanager).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the indexingmanager pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the indexingmanager deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the indexingmanager pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the indexingmanager pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  config: {}
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the indexingmanager service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+    ## Configuration for allow containers to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+  ## Ingress configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/ingress/
+
+  ##
+
+  ingress:
+    ## Enable Ingress.
+
+    ##
+
+    enabled: false
+
+    ## Annotations to be added to the indexingmanager ingress.
+    ##
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   kubernetes.io/tls-acme: 'true'
+    ## Hostnames.
+    ## Must be provided if Ingress is enabled.
+    ##
+    # hosts:
+    #   - domain.example.com
+    ## TLS configuration.
+    ## Secrets must be manually created in the namespace.
+    ##
+    # tls:
+    #   - secretName: qslmanager-tls
+    #     hosts:
+    #       - domain.example.com
+
+## Configuration values for BDI Indexing Registry.
+
+##
+
+registry:
+  ## Override the components name (defaults to registry).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the registry pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the registry deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the registry pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the registry pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the registry service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+## Configuration values for BDI Indexing persistence manager.
+
+##
+
+persistence:
+  ## Override the components name (defaults to peristence).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the persistence pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the persistence deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the persistence pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the persistence pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  config:
+    serverThreads: 1
+
+    threadsPerConcurrentQueue: 1
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the persistence service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+## Configuration values for BDI management console component.
+
+##
+
+managementconsole:
+  ## Override the components name (defaults to managementconsole).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the managementconsole pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the managementconsole deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the managementconsole pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the managementconsole pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the managementconsole service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+  ## Ingress configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/ingress/
+
+  ##
+
+  ingress:
+    ## Enable Ingress.
+
+    ##
+
+    enabled: false
+
+    ## Annotations to be added to the managementconsole ingress.
+    ##
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   kubernetes.io/tls-acme: 'true'
+    ## Hostnames.
+    ## Must be provided if Ingress is enabled.
+    ##
+    # hosts:
+    #   - domain.example.com
+    ## TLS configuration.
+    ## Secrets must be manually created in the namespace.
+    ##
+    # tls:
+    #   - secretName: managementconsole-tls
+    #     hosts:
+    #       - domain.example.com
+
+## Configuration values for BDI QSL Executor components.
+
+##
+
+qslexecutor:
+  ## Override the components name (defaults to qslexecutor).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the qslexecutor pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the qslexecutor deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the qslexecutor pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the qslexecutor pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the qslexecutor service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+    ## Configuration for allow containers to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+  ## Used for generating qslexecutor.json configMap file for custom reloadable config elements in QSLP
+
+  ##
+
+  jsonStr:
+    ## JSON keys/values where the value should be a string in the resulting JSON file.
+
+    exampleStr: "Do not delete"
+
+  json:
+    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
+
+    exampleVal: 0
+
+    maxSecWaitBefore1stLoadbal: 60
+
+    idxltUpdateCheckFreqMS: 60000
+
+    maxConcurrentQueryExecs: 300
+
+## Configuration values for BDI QSL Manager components.
+
+##
+
+qslmanager:
+  ## Override the components name (defaults to qslmanager).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the qslmanager pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the qslmanager deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the qslmanager pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the qslmanager pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the qslmanager service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+    ## Configuration for allow containers to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+    ## Annotations for the qslmanager service.
+
+    ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+    annotations: {}
+
+  ## Ingress configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/ingress/
+
+  ##
+
+  ingress:
+    ## Enable Ingress.
+
+    ##
+
+    enabled: false
+
+    ## Annotations to be added to the qslmanager ingress.
+    ##
+    # annotations:
+    #   kubernetes.io/ingress.class: nginx
+    #   kubernetes.io/tls-acme: 'true'
+    ## Hostnames.
+    ## Must be provided if Ingress is enabled.
+    ##
+    # hosts:
+    #   - domain.example.com
+    ## TLS configuration.
+    ## Secrets must be manually created in the namespace.
+    ##
+    # tls:
+    #   - secretName: qslmanager-tls
+    #     hosts:
+    #       - domain.example.com
+
+  ## TLS configuration for qslmanager external service.
+
+  ##
+
+  tls:
+    enabled: false
+
+    ## TLS certificate / public key.
+
+    ## This is an example. Please replace with a proper certificate if enabled.
+
+    ##
+
+    certificate: |-
+
+      -----BEGIN CERTIFICATE-----
+
+      MIIDazCCAlOgAwIBAgIUYvu8qLi3ZfUGbjrr2fKTauHEYjswDQYJKoZIhvcNAQEL
+
+      BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+
+      GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0xOTA0MDUwMTQyNDNaFw0yOTA0
+
+      MDIwMTQyNDNaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+
+      HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+
+      AQUAA4IBDwAwggEKAoIBAQC8+8WGNovFoOzdsnSPEal0yypuLAdSSL04fUloKt19
+
+      5tcg5B4zlYgBaExM2rZ0jsBwAO+u230q6yYxlMmlrPFWJl2L882DavK132f5Y8GV
+
+      0DMeARwssvT0o4kApMSnUbn/ITrkKY1t9Mb/zcqZk6QKqCthPzMKescByoeU+3ne
+
+      WJoTHsiSLNCiEtzGHca/oo8k0+hgapq4vDSxtOzpTxCDC6HhVHytwdyoBkWBPlHB
+
+      u+Mu1iKFIDMZ2IYlPoCMbpSJiCwuTUy4qNtc5uxX4GEDJw3iZTY/LynMb8Mwx/L9
+
+      F5smxqcxnphDHYAoXfkzIvX9B4CnuqMJREiR16NoBvK/AgMBAAGjUzBRMB0GA1Ud
+
+      DgQWBBSYRGzgEHWVZsFunkmUOZ61F76i0jAfBgNVHSMEGDAWgBSYRGzgEHWVZsFu
+
+      nkmUOZ61F76i0jAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAY
+
+      wT3k4vViiufVdRevZOcHX0gmuid0bFWKn/L/cfFIj8zXSWyMPLai9Rtl+JvLM9Kl
+
+      TH8Oadtv5/BthFuFcwYdwq/67EONVLTrtusqZIPhEhmQRFwMyFcY7vga7BY/RVo4
+
+      N6xTRQ+8ODoPHZhBEMgG9/6uCID33ws0xHF28pgp4rk2/jJrsG0z7ukc26THHRRw
+
+      4ddRj8QrAppT51BTNdBahjYnkuejJikMSGACfr7Zg0WUHH40WSQOv2Q4lDkll8eZ
+
+      ACQwXAObH5KeMeesk5pXFEDe+iMwC6Lj4KK4VjorJ9CCfTtvXY38Q/Uf4KAxjhII
+
+      lektsRXscCUDeJNGW9m7
+
+      -----END CERTIFICATE-----
+
+    ## TLS Root CA certificate(s).
+    ## Optional. If not set, default root CA certs will be used.
+    ## This is an example. Please replace with proper certificate(s) if enabled.
+    ##
+    # rootCert: |-
+    #   -----BEGIN CERTIFICATE-----
+    #   MIIDazCCAlOgAwIBAgIUYvu8qLi3ZfUGbjrr2fKTauHEYjswDQYJKoZIhvcNAQEL
+    #   BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+    #   GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0xOTA0MDUwMTQyNDNaFw0yOTA0
+    #   MDIwMTQyNDNaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+    #   HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+    #   AQUAA4IBDwAwggEKAoIBAQC8+8WGNovFoOzdsnSPEal0yypuLAdSSL04fUloKt19
+    #   5tcg5B4zlYgBaExM2rZ0jsBwAO+u230q6yYxlMmlrPFWJl2L882DavK132f5Y8GV
+    #   0DMeARwssvT0o4kApMSnUbn/ITrkKY1t9Mb/zcqZk6QKqCthPzMKescByoeU+3ne
+    #   WJoTHsiSLNCiEtzGHca/oo8k0+hgapq4vDSxtOzpTxCDC6HhVHytwdyoBkWBPlHB
+    #   u+Mu1iKFIDMZ2IYlPoCMbpSJiCwuTUy4qNtc5uxX4GEDJw3iZTY/LynMb8Mwx/L9
+    #   F5smxqcxnphDHYAoXfkzIvX9B4CnuqMJREiR16NoBvK/AgMBAAGjUzBRMB0GA1Ud
+    #   DgQWBBSYRGzgEHWVZsFunkmUOZ61F76i0jAfBgNVHSMEGDAWgBSYRGzgEHWVZsFu
+    #   nkmUOZ61F76i0jAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAY
+    #   wT3k4vViiufVdRevZOcHX0gmuid0bFWKn/L/cfFIj8zXSWyMPLai9Rtl+JvLM9Kl
+    #   TH8Oadtv5/BthFuFcwYdwq/67EONVLTrtusqZIPhEhmQRFwMyFcY7vga7BY/RVo4
+    #   N6xTRQ+8ODoPHZhBEMgG9/6uCID33ws0xHF28pgp4rk2/jJrsG0z7ukc26THHRRw
+    #   4ddRj8QrAppT51BTNdBahjYnkuejJikMSGACfr7Zg0WUHH40WSQOv2Q4lDkll8eZ
+    #   ACQwXAObH5KeMeesk5pXFEDe+iMwC6Lj4KK4VjorJ9CCfTtvXY38Q/Uf4KAxjhII
+    #   lektsRXscCUDeJNGW9m7
+    #   -----END CERTIFICATE-----
+
+  ## Used for generating qslmanager.json configMap file for custom reloadable config elements in QSLP
+
+  ##
+
+  jsonStr:
+    ## JSON keys/values where the value should be a string in the resulting JSON file.
+
+    exampleStr: "Do not delete"
+
+  json:
+    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
+
+    exampleVal: 0
+
+    resultServerPort: 55002
+
+    inferenceResultCacheSize: 1000
+
+    managerInferenceRunCacheTrimThres: 75
+
+    managerInferenceRunCachePurgeThres: 90
+
+    useConnector: true
+
+    connectorReadsRgsInParallel: false
+
+    printParsedQuery: false
+
+    logQueries: false
+
+    logResults: false
+
+    logQueryResponse2Console: true
+
+    logParserTree: false
+
+    logSymbolFetchPerformancePartialResult: true
+
+    ErrorMsgFull: true
+
+    ErrorMsgDetails: false
+
+    ErrorMsgCodeNumbers: false
+
+    ErrorMsgCodeStrs: false
+
+## Configuration values for BDI QSL Worker components.
+
+##
+
+qslworker:
+  ## Override the components name (defaults to qslworker).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the qslworker pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the qslworker deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the qslworker pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the qslworker pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Configuration for allow containers to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+  ## Strategy for StatefulSet updates (requires Kubernetes 1.6+)
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset
+
+  ##
+
+  updateStrategy: RollingUpdate
+
+  ## Pod Management strategy (requires Kubernetes 1.7+)
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+
+  ##
+
+  ## "OrderedReady" is default. "Parallel" means worker pods will launch or terminate
+
+  ## in parallel.
+
+  podManagementPolicy: Parallel
+
+  ## Used for generating qslworker.json configMap file for custom reloadable config elements in QSLP
+
+  ##
+
+  jsonStr:
+    ## JSON keys/values where the value should be a string in the resulting JSON file.
+
+    exampleStr: "Do not delete"
+
+  json:
+    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
+
+    exampleVal: 0
+
+    workerWarnLevelPctToThrottle: 90
+
+    workerWarnLevelThrottleMaxSec: 30
+
+    workerWarnThrottleProtocol: 0
+
+    workerSubResultCacheCapacity: 100
+
+    workerQueryStaggerMinTimeMSec: 3000
+
+    workerQueryStaggerPct: 70
+
+    workerQueryMaxTimeQueuedSec: 30
+
+    localGrouping: false
+
+    distinctv2: true
+
+    logQueryGraphHistory: 0
+
+## Used for generating qslcommon.json configMap file for custom reloadable config elements in QSLP
+
+##
+
+qslcommon:
+  jsonStr:
+    ## JSON keys/values where the value should be a string in the resulting JSON file.
+
+    exampleStr: "Do not delete"
+
+    indexerRegistryPort: "55057"
+
+    qslRegistryPort: "44000"
+
+  json:
+    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
+
+    exampleVal: 0
+
+    maxDiags: 0
+
+    memWarnLevelsPercentages: "[80,90,95,100]"
+
+    memWarnPurgePercentage: 90
+
+    logLevel: 3
+
+    perfLogLevel: 2
+
+    logIncludeIPInLogHeader: true
+
+    logIncludePortInLogHeader: false
+
+    maxLogFileSizeInKB: 5120
+
+    maxLogFilesToKeep: 10
+
+    detailedLogFileName: true
+
+    logToConsole: true
+
+    maxColumnSymbolCacheCapacity: 100000
+
+    distinctSymbolCacheWarmup: true
+
+    setAnalysisEnabled: true
+
+## Configuration values for BDI REST API components.
+
+##
+
+restapi:
+  ## Override the components name (defaults to restapi).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the restapi pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the restapi deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the restapi pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the restapi pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the restapi service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+    ## Annotations for the restapi service.
+
+    ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+    annotations: {}
+
+  ## TLS configuration for REST service.
+
+  ##
+
+  tls:
+    enabled: false
+
+    ## TLS certificate.
+
+    ## This is an example. Please replace with a proper certificate if enabled.
+
+    ##
+
+    certificate: |-
+
+      -----BEGIN CERTIFICATE-----
+
+      MIIDazCCAlOgAwIBAgIUYvu8qLi3ZfUGbjrr2fKTauHEYjswDQYJKoZIhvcNAQEL
+
+      BQAwRTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM
+
+      GEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0xOTA0MDUwMTQyNDNaFw0yOTA0
+
+      MDIwMTQyNDNaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEw
+
+      HwYDVQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwggEiMA0GCSqGSIb3DQEB
+
+      AQUAA4IBDwAwggEKAoIBAQC8+8WGNovFoOzdsnSPEal0yypuLAdSSL04fUloKt19
+
+      5tcg5B4zlYgBaExM2rZ0jsBwAO+u230q6yYxlMmlrPFWJl2L882DavK132f5Y8GV
+
+      0DMeARwssvT0o4kApMSnUbn/ITrkKY1t9Mb/zcqZk6QKqCthPzMKescByoeU+3ne
+
+      WJoTHsiSLNCiEtzGHca/oo8k0+hgapq4vDSxtOzpTxCDC6HhVHytwdyoBkWBPlHB
+
+      u+Mu1iKFIDMZ2IYlPoCMbpSJiCwuTUy4qNtc5uxX4GEDJw3iZTY/LynMb8Mwx/L9
+
+      F5smxqcxnphDHYAoXfkzIvX9B4CnuqMJREiR16NoBvK/AgMBAAGjUzBRMB0GA1Ud
+
+      DgQWBBSYRGzgEHWVZsFunkmUOZ61F76i0jAfBgNVHSMEGDAWgBSYRGzgEHWVZsFu
+
+      nkmUOZ61F76i0jAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQAY
+
+      wT3k4vViiufVdRevZOcHX0gmuid0bFWKn/L/cfFIj8zXSWyMPLai9Rtl+JvLM9Kl
+
+      TH8Oadtv5/BthFuFcwYdwq/67EONVLTrtusqZIPhEhmQRFwMyFcY7vga7BY/RVo4
+
+      N6xTRQ+8ODoPHZhBEMgG9/6uCID33ws0xHF28pgp4rk2/jJrsG0z7ukc26THHRRw
+
+      4ddRj8QrAppT51BTNdBahjYnkuejJikMSGACfr7Zg0WUHH40WSQOv2Q4lDkll8eZ
+
+      ACQwXAObH5KeMeesk5pXFEDe+iMwC6Lj4KK4VjorJ9CCfTtvXY38Q/Uf4KAxjhII
+
+      lektsRXscCUDeJNGW9m7
+
+      -----END CERTIFICATE-----
+
+## Configuration values for BDI Symbol Server components.
+
+##
+
+symbolserver:
+  ## Override the components name (defaults to symbolserver).
+
+  ##
+
+  # nameOverride:
+
+  ## Number of replicas.
+
+  ##
+
+  replicaCount: 1
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Additional affinities to add to the symbolserver pods.
+
+  ##
+
+  # additionalAffinities:
+
+  #   podAntiAffinity:
+
+  #     requiredDuringSchedulingIgnoredDuringExecution:
+
+  #     - labelSelector:
+
+  #         matchExpressions:
+
+  #         - key: app
+
+  #           operator: In
+
+  #           values:
+
+  #           - bdi
+
+  #       topologyKey: "kubernetes.io/hostname"
+
+  ## Annotations for the symbolserver deployment.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Node selector for the symbolserver pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
+
+  nodeSelector: {}
+
+  ## Tolerations for the symbolserver pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  config: {}
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Configuration for allow containers to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+  ## Strategy for StatefulSet updates (requires Kubernetes 1.6+)
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset
+
+  ##
+
+  updateStrategy: RollingUpdate
+
+  ## Pod Management strategy (requires Kubernetes 1.7+)
+
+  ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#pod-management-policies
+
+  ##
+
+  ## "OrderedReady" is default. "Parallel" means worker pods will launch or terminate
+
+  ## in parallel.
+
+  podManagementPolicy: Parallel
+
+## data volume for workloads
+
+##
+
+data:
+  path: /home/data
+
+  ## Persistent Volume Storage configuration for data.
+
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+
+  ##
+
+  persistence:
+    enabled: true
+
+    ## Location on local disk if persistence is disabled.
+
+    ##
+
+    folder: /tmp/data
+
+    ## bdi source data Persistent Volume Storage Class
+
+    ## If defined, storageClassName: <storageClass>
+
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+
+    ## If undefined (the default) or set to null, no storageClassName spec is
+
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+
+    ##   GKE, AWS & OpenStack)
+
+    ##
+
+    # storageClass: "-"
+
+    ## Persistence access mode
+
+    ## https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes-1
+
+    accessMode: ReadOnlyMany
+
+    ## Persistence volume default size
+
+    size: 10Gi
+
+    ## The volume mode, either Filesystem or Block. Beta feature.
+
+    ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#binding-block-volumes
+
+    ##
+
+    # mode: Filesystem
+
+    ## Statically define a persistent volume.
+
+    ##
+
+    volume:
+      enabled: false
+      ## Reclaim policy for PersistentVolume.
+      ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming
+      ##
+      # reclaimPolicy: Delete
+      ## A list of mount options for PersistentVolume.
+      ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options
+      ##
+      # mountOptions:
+      ## PersistentVolume plugin.
+      ## ref: https://kubernetes.io/docs/concepts/storage/volumes/#types-of-volumes
+      ##
+      # plugin:
+
+## output files volume for workloads
+
+##
+
+output:
+  path: /home/output
+
+  ## Persistent Volume Storage configuration for output.
+
+  ## ref: https://kubernetes.io/docs/user-guide/persistent-volumes
+
+  ##
+
+  persistence:
+    enabled: true
+
+    ## Location on local disk if persistence is disabled.
+
+    ##
+
+    folder: /tmp/output
+
+    ## bdi source data Persistent Volume Storage Class
+
+    ## If defined, storageClassName: <storageClass>
+
+    ## If set to "-", storageClassName: "", which disables dynamic provisioning
+
+    ## If undefined (the default) or set to null, no storageClassName spec is
+
+    ##   set, choosing the default provisioner.  (gp2 on AWS, standard on
+
+    ##   GKE, AWS & OpenStack)
+
+    ##
+
+    # storageClass: "-"
+
+    ## Persistence access mode
+
+    ## https://kubernetes.io/docs/concepts/storage/persistent-volumes/#access-modes-1
+
+    accessMode: ReadWriteMany
+
+    ## Persistence volume default size
+
+    size: 10Gi
+
+    ## The volume mode, either Filesystem or Block. Beta feature.
+
+    ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#binding-block-volumes
+
+    ##
+
+    # mode: Filesystem
+
+    ## Statically define a persistent volume.
+
+    ##
+
+    volume:
+      enabled: false
+      ## Reclaim policy for PersistentVolume.
+      ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes#reclaiming
+      ##
+      # reclaimPolicy: Delete
+      ## A list of mount options for PersistentVolume.
+      ## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/#mount-options
+      ##
+      # mountOptions:
+      ## PersistentVolume plugin.
+      ## ref: https://kubernetes.io/docs/concepts/storage/volumes/#types-of-volumes
+      ##
+      # plugin:
+
+## Configuration values for BDI Disk Cache daemon set.
+
+##
+
+cache:
+  enabled: false
+
+  ## Path where volumes are mounted to inside pods.
+
+  ##
+
+  path: /home/cache
+
+  ## Location of data on the physical nodes.
+
+  ##
+
+  folder: cache
+
+  ## Override the components name (defaults to cache).
+
+  ##
+
+  # nameOverride:
+
+  ## Configure resource requests and limits.
+
+  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
+
+  ##
+
+  resources: {}
+
+  #  requests:
+
+  #    cpu: "100m"
+
+  #    memory: "128Mi"
+
+  ## Annotations for the cache daemonset.
+
+  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
+
+  annotations: {}
+
+  ## Tolerations for the cache pods.
+
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+
+  tolerations: []
+
+  ## Service configuration.
+
+  ## ref: https://kubernetes.io/docs/user-guide/services/
+
+  ##
+
+  service:
+    ## Service type for the cache service.
+
+    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
+
+    ##
+
+    type: ClusterIP
+
+    ## Configuration for allow containers to accept SSH connections.
+
+    ##
+
+    ssh:
+      enabled: true
+
+## Configuration values for the redis-ha dependency.
+
+## Ref: https://github.com/helm/charts/blob/master/stable/redis-ha
+
+##
+
+redis-ha:
+  ## Use the Redis chart dependency.
+
+  ##
+
+  enabled: false
+
+  ## Disables persistence in Redis.
+
+  ##
+
+  redis:
+    config:
+      save: ""
+
+  ## Disables persistent volumes as Redis does not persist data.
+
+  ##
+
+  persistentVolume:
+    enabled: false
+
+  ## Disable hard anti-affinity by default.
+
+  ## Hard anti-affinity will force all Redis pods onto seperate nodes and is recommended for production.
+
+  ##
+
+  hardAntiAffinity: false
+
+## Configuration for the nginx-ingress depenency.
+
+## Ref: https://github.com/helm/charts/tree/master/stable/nginx-ingress
+
+##
+
+nginx-ingress:
+  enabled: false
+
+## Google configuration when using Google Cloud Storage.
+
+##
+
+google:
+  ## JSON credentials file. Use --set-file to pass it to helm install.
+
+  ##
+
+  credentials: ""
+
+  ## Google project ID for cloud storage.
+
+  ##
+
+  projectId: ""
+
+## Configuration for the sourcecloudgw.
+
+## Ref: https://github.com/helm/charts/tree/master/stable/minio
+
+##
+
+sourcecloudgw:
+  ## Enables the sourcecloudgw service.
+
+  ##
+
+  enabled: false
+
+  ## Gateway type, any of "s3", "azure" or "gcs"
+
+  ## Set to empty string (i.e. "") for server mode
+
+  ##
+
+  gateway: s3
+
+  ## Access key (s3, gcs) or storage account name (azure).
+
+  ##
+
+  accessKey: ""
+
+  ## Access secret.
+
+  ##
+
+  secretKey: ""
+
+## Configuration for the outputcloudgw.
+
+## Ref: https://github.com/helm/charts/tree/master/stable/minio
+
+##
+
+outputcloudgw:
+  ## Enables the outputcloudgw service.
+
+  ##
+
+  enabled: false
+
+  ## Gateway type, any of "s3", "azure" or "gcs"
+
+  ## Set to empty string (i.e. "") for server mode
+
+  gateway: s3
+
+  ## Access key (s3, gcs) or storage account name (azure).
+
+  ##
+
+  accessKey: ""
+
+  ## Access secret.
+
+  ##
+
+  secretKey: ""
+
+brokerservice:
+  # Enables the brokerservice
+
+  #
+
+  enabled: false
+
+  ## Override the components name (defaults to brokerservice).
+
+  ##
+
+  # nameOverride:
+
+  # Broker service (container) port.
+
+  #
+
+  containerPort: 8082
+
+  # Port to expose on the host (node) where broker service runs.
+
+  #
+
+  hostPort: 8082

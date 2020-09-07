@@ -1,0 +1,23 @@
+{{- if .Values.autostartServices }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "bdi.registry.fullname" . }}
+  labels:
+    app: {{ template "bdi.registry.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+{{- if .Values.registry }}{{- if .Values.registry.service }}
+  type: {{ .Values.registry.service.type }}
+{{- end }}{{- end }}
+  ports:
+    - port: 55057
+      targetPort: registry
+      protocol: TCP
+      name: registry
+  selector:
+    app: {{ template "bdi.registry.fullname" . }}
+    release: {{ .Release.Name }}
+{{- end}}

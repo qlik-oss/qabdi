@@ -1,0 +1,180 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ template "bdi.symbolserver.fullname" . }}
+  labels:
+    app: {{ template "bdi.symbolserver.fullname" . }}
+    chart: {{ template "bdi.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  serviceName: {{ template "bdi.symbolserver.fullname" . }}
+  replicas: {{ .Values.symbolserver.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi.symbolserver.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi.symbolserver.fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+{{ toYaml .Values.symbolserver.annotations | indent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.symbolserver.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.symbolserver.additionalAffinities | indent 8 }}
+      {{- end }}
+      {{- with .Values.symbolserver.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      tolerations:
+{{ toYaml .Values.symbolserver.tolerations | indent 8 }}
+      containers:
+        - name: {{ template "bdi.symbolserver.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if .Values.autostartServices }}
+          command: ["/home/ubuntu/dist/indexer/abdi_indexing_server"]
+          args:
+          - -s
+          - "symbol_service"
+          - -l
+          - "{{.Values.acceptLicense}}"
+          env:
+          - name: POD_NAME
+            value: "{{ template "bdi.symbolserver.fullname" . }}"
+          - name: KUBERNETES_MODE
+            value: "true"
+          - name: REGISTRY_URI
+            value: "{{ template "bdi.registry.fullname" . }}:55057"
+          {{- if hasKey .Values.symbolserver.config "serverThreads" }}
+          - name: ASYNC_SERVER_THREADS
+            value: "{{ .Values.symbolserver.config.serverThreads | default 1  }}"
+          {{- end }}
+          {{- if hasKey .Values.symbolserver.config "threadsPerConcurrentQueue" }}
+          - name: THREADS_PER_CQ
+            value: "{{ .Values.symbolserver.config.threadsPerConcurrentQueue | default 1  }}"
+          {{- end }}
+{{- else }}
+          command: ['sh', '-c']
+          args:
+            - env > /etc/environment && /usr/sbin/sshd -D
+          env:
+{{- end }}
+          - name: ACCEPT_QULA
+            value: {{ .Values.acceptLicense | quote }}
+            {{- if .Values.symbolserver.resources.requests }}
+            {{- if .Values.symbolserver.resources.requests.cpu }}
+          - name: INDEXING_VCPU_REQUEST
+            value: {{ .Values.symbolserver.resources.requests.cpu | default "" | quote }}
+          - name: QBDI_VCPU_REQUEST
+            value: {{ .Values.symbolserver.resources.requests.cpu | default "" | quote }}
+            {{- end }}
+            {{- if .Values.symbolserver.resources.requests.memory }}
+          - name: INDEXING_MEMORY_REQUEST
+            value: {{ .Values.symbolserver.resources.requests.memory | default "" | quote }}
+          - name: QBDI_MEMORY_REQUEST
+            value: {{ .Values.symbolserver.resources.requests.memory | default "" | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.symbolserver.resources.limits }}
+            {{- if .Values.symbolserver.resources.limits.cpu }}
+          - name: INDEXING_VCPU_LIMIT
+            value: {{ .Values.symbolserver.resources.limits.cpu | default "" | quote }}
+          - name: QBDI_VCPU_LIMIT
+            value: {{ .Values.symbolserver.resources.limits.cpu | default "" | quote }}
+            {{- end }}
+            {{- if .Values.symbolserver.resources.limits.memory }}
+          - name: INDEXING_MEMORY_LIMIT
+            value: {{ .Values.symbolserver.resources.limits.memory | default "" | quote }}
+          - name: QBDI_MEMORY_LIMIT
+            value: {{ .Values.symbolserver.resources.limits.memory | default "" | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if .Values.sourcecloudgw.enabled }}
+          - name: SOURCE_GW_KEY
+            value: {{ .Values.sourcecloudgw.accessKey | quote }}
+          - name: SOURCE_GW_SECRET
+            value: {{ .Values.sourcecloudgw.secretKey | quote }}
+            {{- end }}
+            {{- if .Values.outputcloudgw.enabled }}
+          - name: OUTPUT_GW_KEY
+            value: {{ .Values.outputcloudgw.accessKey | quote }}
+          - name: OUTPUT_GW_SECRET
+            value: {{ .Values.outputcloudgw.secretKey | quote }}
+            {{- end }}
+          ports:
+            - name: symbol
+              containerPort: 55030
+              protocol: TCP
+{{- if not (.Values.autostartServices) }}
+            {{- if .Values.symbolserver.service.ssh.enabled }}
+            - name: ssh
+              containerPort: 22
+              protocol: TCP
+            {{- end }}
+{{- end }}
+          securityContext:
+            privileged: {{ .Values.image.privileged }}
+{{- if .Values.autostartServices }}
+          readinessProbe:
+            exec:
+              command: ["/bin/grpc_health_probe", "-addr=:55030", "-service=readiness"]
+            initialDelaySeconds: 3
+            periodSeconds: 5
+{{- end }}
+          resources:
+{{ toYaml .Values.symbolserver.resources | indent 12 }}
+          volumeMounts:
+            - mountPath: {{ .Values.data.path }}
+              name: data-pv
+            - mountPath: {{ .Values.output.path }}
+              name: output-pv
+            {{- if .Values.cache.enabled }}
+            - mountPath: {{ .Values.cache.path }}
+              name: cache-pv
+            {{- end }}
+            {{- if .Values.autostartServices }}
+            - name: logging-volume
+              mountPath: /etc/config/logging
+            {{- end }}
+      volumes:
+        {{- if .Values.data.persistence.enabled }}
+        - name: data-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.data.persistence.existingClaim | default (include "bdi.data.fullname" .) }}
+        {{ else }}
+        - name: data-pv
+          hostPath:
+            path: {{ .Values.data.persistence.folder }}
+        {{- end }}
+        {{- if .Values.output.persistence.enabled }}
+        - name: output-pv
+          persistentVolumeClaim:
+            claimName: {{ .Values.output.persistence.existingClaim | default (include "bdi.output.fullname" .) }}
+        {{ else }}
+        - name: output-pv
+          hostPath:
+            path: {{ .Values.output.persistence.folder }}
+        {{- end }}
+        {{- if .Values.cache.enabled }}
+        - name: cache-pv
+          hostPath:
+            path: {{ .Values.cache.folder }}
+        {{- end }}
+        {{- if .Values.autostartServices }}
+        - name: logging-volume
+          configMap:
+            name: {{ template "bdi.symbolserver.logging.fullname" . }}
+        {{- end }}
+  updateStrategy:
+    type: {{ .Values.symbolserver.updateStrategy }}
+  podManagementPolicy: {{ .Values.symbolserver.podManagementPolicy }}
+
