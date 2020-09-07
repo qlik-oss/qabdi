@@ -1,0 +1,25 @@
+apiVersion: v1
+entries:
+  bdi:
+  - apiVersion: v1
+    appVersion: 4.191.39
+    created: "2020-09-07T06:31:50.543821759Z"
+    dependencies:
+    - condition: nginx-ingress.enabled
+      name: nginx-ingress
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: 1.39.0
+    - condition: redis-ha.enabled
+      name: redis-ha
+      repository: https://kubernetes-charts.storage.googleapis.com/
+      version: 3.6.1
+    description: Big Data Index
+    digest: 5160c91c142b35c8132adce1c4bfcb7c92c7d78e24cbc4d362a7626f32d39a71
+    maintainers:
+    - name: PA BDI
+      url: https://qlikdev.slack.com/channels/dev-bdi-buildstatus
+    name: bdi
+    urls:
+    - bdi-4.19.18.tgz
+    version: 4.19.18
+generated: "2020-09-07T06:31:50.520078871Z"
