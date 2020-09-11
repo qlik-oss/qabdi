@@ -26,7 +26,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}
-          image: "{{ default .Values.image.registry .Values.license.registry }}/{{ default "licenses" .Values.license.repository }}:{{ default "3.17.0" .Values.license.tag }}"
+          image: "{{ default .Values.image.registry .Values.license.registry }}/{{ default "qlik-oss/licenses" .Values.license.repository }}:{{ default "3.17.0" .Values.license.tag }}"
           imagePullPolicy: "{{ default .Values.image.pullPolicy .Values.license.imagePullPolicy }}"
           env:
             - name: ABDI_MODE
