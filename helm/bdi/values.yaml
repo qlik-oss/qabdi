@@ -9,9 +9,9 @@
 ##
 
 image:
-  registry: qlik-docker-qabdi.bintray.io
+  registry: ghcr.io
 
-  repository: bdiproduct
+  repository: qlik-oss/bdiproduct
 
   tag: 4.191.39
 
