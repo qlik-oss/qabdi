@@ -14,8 +14,7 @@ jobs:
 
       - name: Add helm repo
         run: |
-          helm init
-          helm helm repo add qlik https://qlik-oss.github.io/qabdi/
+          helm repo add qlik https://qlik-oss.github.io/qabdi/
                                                           
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.0.0
