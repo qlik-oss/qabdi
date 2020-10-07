@@ -4,10 +4,10 @@ kind: ConfigMap
 metadata:
   labels:
     app: {{ template "nginx-ingress.name" . }}
-    chart: {{ template "nginx-ingress.chart" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     component: "{{ .Values.controller.name }}"
     heritage: {{ .Release.Service }}
-    release: {{ template "nginx-ingress.releaseLabel" . }}
+    release: {{ .Release.Name }}
   name: {{ template "nginx-ingress.fullname" . }}-udp
 data:
 {{ tpl (toYaml .Values.udp) . | indent 2 }}

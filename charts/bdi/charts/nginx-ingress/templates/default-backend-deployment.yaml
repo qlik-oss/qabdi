@@ -1,25 +1,15 @@
 {{- if .Values.defaultBackend.enabled }}
-apiVersion: {{ template "deployment.apiVersion" . }}
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
     app: {{ template "nginx-ingress.name" . }}
-    chart: {{ template "nginx-ingress.chart" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+    component: "{{ .Values.defaultBackend.name }}"
     heritage: {{ .Release.Service }}
-    release: {{ template "nginx-ingress.releaseLabel" . }}
-    app.kubernetes.io/component: default-backend
-    {{- if .Values.defaultBackend.deploymentLabels }}
-{{ toYaml .Values.defaultBackend.deploymentLabels | indent 4 }}
-    {{- end }}
+    release: {{ .Release.Name }}
   name: {{ template "nginx-ingress.defaultBackend.fullname" . }}
 spec:
-  selector:
-    matchLabels:
-      app: {{ template "nginx-ingress.name" . }}
-      release: {{ template "nginx-ingress.releaseLabel" . }}
-    {{- if .Values.defaultBackend.useComponentLabel }}
-      app.kubernetes.io/component: default-backend
-    {{- end }}
   replicas: {{ .Values.defaultBackend.replicaCount }}
   revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
   template:
@@ -32,8 +22,8 @@ spec:
     {{- end }}
       labels:
         app: {{ template "nginx-ingress.name" . }}
-        release: {{ template "nginx-ingress.releaseLabel" . }}
-        app.kubernetes.io/component: default-backend
+        component: "{{ .Values.defaultBackend.name }}"
+        release: {{ .Release.Name }}
         {{- if .Values.defaultBackend.podLabels }}
 {{ toYaml .Values.defaultBackend.podLabels | indent 8 }}
         {{- end }}
@@ -51,9 +41,7 @@ spec:
       {{- end }}
       containers:
         - name: {{ template "nginx-ingress.name" . }}-{{ .Values.defaultBackend.name }}
-          {{- with .Values.defaultBackend.image }}
-          image: "{{.repository}}{{- if (.digest) -}} @{{.digest}} {{- else -}} :{{ .tag }} {{- end -}}"
-          {{- end }}
+          image: "{{ .Values.defaultBackend.image.repository }}:{{ .Values.defaultBackend.image.tag }}"
           imagePullPolicy: "{{ .Values.defaultBackend.image.pullPolicy }}"
           args:
           {{- range $key, $value := .Values.defaultBackend.extraArgs }}
@@ -65,10 +53,6 @@ spec:
           {{- end }}
           securityContext:
             runAsUser: {{ .Values.defaultBackend.image.runAsUser }}
-          {{- if .Values.defaultBackend.extraEnvs }}
-          env:
-{{ toYaml .Values.defaultBackend.extraEnvs | indent 12 }}
-          {{- end }}
           livenessProbe:
             httpGet:
               path: /healthz
@@ -99,7 +83,6 @@ spec:
       nodeSelector:
 {{ toYaml .Values.defaultBackend.nodeSelector | indent 8 }}
     {{- end }}
-      serviceAccountName: {{ template "nginx-ingress.defaultBackend.serviceAccountName" . }}
     {{- if .Values.defaultBackend.tolerations }}
       tolerations:
 {{ toYaml .Values.defaultBackend.tolerations | indent 8 }}

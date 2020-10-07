@@ -39,7 +39,7 @@ The following table lists the configurable parameters of the chart and their def
 | `enableCrashDumpUpload` | Enable crash dump handling including upload to dump server | `false` |
 | `image.registry` | image registry | `qliktech-docker.jfrog.io`|
 | `image.repository` | image name | `bdiproduct`|
-| `image.tag` | image version | `4.191.39` |
+| `image.tag` | image version | `5.1.0` |
 | `image.pullPolicy` | image pull policy | `Always` if `imageTag` is `latest`, else `IfNotPresent` |
 | `image.privileged` | Enable `privileged` mode for all pods | `false` |
 | `imagePullSecrets` | A list of secret names for accessing private image registries | `[{name: "artifactory-docker-secret"}]` |

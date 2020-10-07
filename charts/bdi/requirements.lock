@@ -1,9 +1,9 @@
 dependencies:
 - name: nginx-ingress
   repository: https://kubernetes-charts.storage.googleapis.com/
-  version: 1.39.0
+  version: 1.10.3
 - name: redis-ha
   repository: https://kubernetes-charts.storage.googleapis.com/
   version: 3.6.1
-digest: sha256:79d6146778c1f7713b6cf09c64314113da2d74bbca41446206c75247a91a7a72
-generated: "2020-09-02T11:16:49.888544+02:00"
+digest: sha256:fb3d8837a1b42063e4c651dbbb0288dd8b2bfa6a0e7f5732065fa111964e3e1f
+generated: "2019-12-05T09:56:03.622953+01:00"

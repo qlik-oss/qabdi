@@ -135,9 +135,6 @@ spec:
             httpGet:
               path: /health
               port: http
-            initialDelaySeconds: 5
-            periodSeconds: 30
-            timeoutSeconds: 30
 {{- if not (.Values.autostartServices) }}
       initContainers:
         - name: init

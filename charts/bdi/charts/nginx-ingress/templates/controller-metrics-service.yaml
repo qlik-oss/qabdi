@@ -13,16 +13,14 @@ metadata:
 {{ toYaml .Values.controller.metrics.service.labels | indent 4 }}
 {{- end }}
     app: {{ template "nginx-ingress.name" . }}
-    chart: {{ template "nginx-ingress.chart" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version }}
     component: "{{ .Values.controller.name }}"
     heritage: {{ .Release.Service }}
-    release: {{ template "nginx-ingress.releaseLabel" . }}
+    release: {{ .Release.Name }}
   name: {{ template "nginx-ingress.controller.fullname" . }}-metrics
 spec:
 {{- if not .Values.controller.metrics.service.omitClusterIP }}
-  {{- with .Values.controller.metrics.service.clusterIP }}
-  clusterIP: {{ if eq "-" . }}""{{ else }}{{ . | quote }}{{ end }}
-  {{- end }}
+  clusterIP: "{{ .Values.controller.metrics.service.clusterIP }}"
 {{- end }}
 {{- if .Values.controller.metrics.service.externalIPs }}
   externalIPs:
@@ -41,7 +39,7 @@ spec:
       targetPort: metrics
   selector:
     app: {{ template "nginx-ingress.name" . }}
-    release: {{ template "nginx-ingress.releaseLabel" . }}
-    app.kubernetes.io/component: controller
+    component: "{{ .Values.controller.name }}"
+    release: {{ .Release.Name }}
   type: "{{ .Values.controller.metrics.service.type }}"
 {{- end }}
