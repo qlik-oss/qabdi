@@ -28,6 +28,10 @@ spec:
       targetPort: results
       protocol: TCP
       name: results
+    - port: 55003
+      targetPort: inf-results
+      protocol: TCP
+      name: inf-results
     - port: 65000
       targetPort: roaring-1
       protocol: TCP
@@ -36,14 +40,6 @@ spec:
       targetPort: roaring-2
       protocol: TCP
       name: roaring-2
-{{- if not (.Values.autostartServices) }}
-    {{- if .Values.qslmanager.service.ssh.enabled }}
-    - port: 22
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-    {{- end }}
-{{- end }}
   selector:
     app: {{ template "bdi.qslmanager.fullname" . }}
     release: {{ .Release.Name }}

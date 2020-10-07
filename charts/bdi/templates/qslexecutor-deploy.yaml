@@ -39,38 +39,41 @@ spec:
         - name: {{ template "bdi.qslexecutor.fullname" . }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- if .Values.autostartServices }}
           command: ["/home/ubuntu/dist/qsl_processor/qsl_processor_tool"]
-          args:	    
+          args:
           - -m
           - "registry_executor"
-          - -a 
+          - -a
           - "{{ template "bdi.qslexecutor.fullname" . }}"
-          - -p 
+          - -p
           - "44000"
-          - -o 
-          - "8080"
-          - -c 
+          - -o
+          - "0"
+          - -c
           - "/etc/config/qslexecutor.json"
-          - -l 
+          - -l
           - "{{.Values.acceptLicense}}"
           env:
           - name: KUBERNETES_MODE
             value: "true"
-{{- else}}
-          command: ['sh', '-c']
-          args:
-            - env > /etc/environment && /usr/sbin/sshd -D
-          env:
-{{- end }}
           - name: ACCEPT_QULA
             value: {{ .Values.acceptLicense | quote }}
+          - name: REGISTRY_URI
+            value: "{{ template "bdi.registry.fullname" . }}:55057"
+          - name: PERSISTENCE_URI
+            value: "{{ template "bdi.persistence.fullname" . }}:55010"
+          - name: QBDI_MIN_SERVICE_COUNT_SYMBOL
+            value: {{ .Values.symbolserver.replicaCount | quote }}
+          - name: QBDI_EXPECTED_WORKER_COUNT
+            value: {{ .Values.qslworker.replicaCount | quote }}
           {{- $redis := index .Values "redis-ha" }}
           {{- if $redis.enabled }}
           - name: KVS_HOST
             value: {{ template "bdi.redis.fullname" . }}
           - name: KVS_PORT
             value: {{ $redis.sentinel.port | quote }}
+          - name: QBDI_STARTUP_VERBOSITY
+            value: "1"
           {{- if and $redis.auth }}
           - name: KVS_AUTH
             valueFrom:
@@ -105,18 +108,7 @@ spec:
             value: {{ .Values.qslexecutor.resources.limits.memory | default "" | quote }}
           {{- end }}
           {{- end }}
-          {{- if .Values.sourcecloudgw.enabled }}
-          - name: SOURCE_GW_KEY
-            value: {{ .Values.sourcecloudgw.accessKey | quote }}
-          - name: SOURCE_GW_SECRET
-            value: {{ .Values.sourcecloudgw.secretKey | quote }}
-          {{- end }}
-          {{- if .Values.outputcloudgw.enabled }}
-          - name: OUTPUT_GW_KEY
-            value: {{ .Values.outputcloudgw.accessKey | quote }}
-          - name: OUTPUT_GW_SECRET
-            value: {{ .Values.outputcloudgw.secretKey | quote }}
-          {{- end }}
+          {{- include "bdi.cloudSync.exportSettings" . | indent 10 }}
           - name: ENABLE_CRASH_DUMP
             value: {{ .Values.enableCrashDumpUpload | quote }}
           ports:
@@ -126,13 +118,6 @@ spec:
             - name: qslexecutor-r
               containerPort: 54000
               protocol: TCP
-{{- if not (.Values.autostartServices) }}
-            {{- if .Values.qslexecutor.service.ssh.enabled }}
-            - name: ssh
-              containerPort: 22
-              protocol: TCP
-            {{- end }}
-{{- end }}
           securityContext:
             privileged: {{ .Values.image.privileged }}
             {{- if .Values.enableCrashDumpUpload }}
@@ -140,13 +125,7 @@ spec:
               add:
                 - SYS_PTRACE
             {{- end }}
-          {{- if .Values.autostartServices }}
-          readinessProbe:
-            exec:
-              command: ["/bin/grpc_health_probe", "-addr=:44000", "-service=readiness"]
-            initialDelaySeconds: 3
-            periodSeconds: 5
-          {{- end }}  
+            {{- include "bdi.qsl.commonprobes" (dict "Values" .Values "PortNum" 44000) | indent 10 }}
           resources:
 {{ toYaml .Values.qslexecutor.resources | indent 12 }}
           volumeMounts:
@@ -154,14 +133,8 @@ spec:
               name: data-pv
             - mountPath: {{ .Values.output.path }}
               name: output-pv
-            {{- if .Values.cache.enabled }}
-            - mountPath: {{ .Values.cache.path }}
-              name: cache-pv
-            {{- end }}
-            {{- if .Values.autostartServices }}
             - name: config-volume
               mountPath: /etc/config
-            {{- end }}
       volumes:
         {{- if .Values.data.persistence.enabled }}
         - name: data-pv
@@ -181,14 +154,7 @@ spec:
           hostPath:
             path: {{ .Values.output.persistence.folder }}
         {{- end }}
-        {{- if .Values.cache.enabled }}
-        - name: cache-pv
-          hostPath:
-            path: {{ .Values.cache.folder }}
-        {{- end }}
-        {{- if .Values.autostartServices }}
         - name: config-volume
           configMap:
             name: {{ template "bdi.qsl.config.fullname" . }}
-        {{- end }}
 

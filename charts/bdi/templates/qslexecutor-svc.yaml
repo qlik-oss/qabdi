@@ -18,14 +18,6 @@ spec:
       targetPort: qslexecutor-r
       protocol: TCP
       name: qslexecutor-r
-{{- if not (.Values.autostartServices) }}
-    {{- if .Values.qslexecutor.service.ssh.enabled }}
-    - port: 22
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-    {{- end }}
-{{- end }}    
   selector:
     app: {{ template "bdi.qslexecutor.fullname" . }}
     release: {{ .Release.Name }}

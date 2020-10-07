@@ -1,9 +1,26 @@
 dependencies:
+- name: licenses
+  version: 1.21.5
+  repository: '@qlik'
+- name: bdi-mc
+  version: 0.2.19
+  repository: '@qlik'
+  alias: managementconsole
 - name: nginx-ingress
-  version: 1.10.3
+  version: 1.39.0
   repository: https://kubernetes-charts.storage.googleapis.com/
   condition: nginx-ingress.enabled
 - name: redis-ha
   version: 3.6.1
   repository: https://kubernetes-charts.storage.googleapis.com/
   condition: redis-ha.enabled
+- name: minio
+  version: 5.0.25
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  condition: sourcecloudgw.enabled
+  alias: sourcecloudgw
+- name: minio
+  version: 5.0.25
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  condition: outputcloudgw.enabled
+  alias: outputcloudgw

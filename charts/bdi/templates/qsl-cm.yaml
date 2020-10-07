@@ -1,72 +1,68 @@
-{{- if .Values.autostartServices }}
 kind: ConfigMap
 apiVersion: v1
 metadata:
   name: {{ template "bdi.qsl.config.fullname" . }}
 data:
   qslcommon.json: |-
-    {
-      "indexerRegistry"         : "{{ template "bdi.registry.fullname" . }}:55057",
-      "indexerRegistryHost"     : "{{ template "bdi.registry.fullname" . }}",
-      "qslRegistry"             : "{{ template "bdi.qslexecutor.fullname" . }}:44000",
-      "qslRegistryHost"         : "{{ template "bdi.qslexecutor.fullname" . }}",
-      "path2DMSchemaFile"       : "{{ .Values.output.path }}/config/indexer",
-      "path2IndexletStorage"    : "{{ .Values.output.path }}/IndexOutput",
-      "path2A2AStorageRoot"     : "{{ .Values.output.path }}/A2AOutput",
-      "path2SymbolPositions"    : "",
-{{- range $key, $val:= .Values.qslcommon.jsonStr }}
-{{ $key | quote | indent 6}}    : {{ $val | quote }},
-{{- end}}
-{{- range $key, $val:= .Values.qslcommon.json }}
-{{ $key | quote | indent 6}}    : {{ $val }},
-{{- end}}
-      "END-OF-JSON": "CONFIG-FILE"
-    }
+    {{ template "bdi.merge.configvalues" (dict "Values" .Values.qslcommon.config "Defaults" (include "qslcommon.default" .)) }}
 
   qslexecutor.json: |-
-    {
-      "path2GeneralConfigFile"  : "/etc/config/qslcommon.json",
-      "path4LogFiles"           : "/tmp/log/qslexecutor",
-{{- range $key, $val:= .Values.qslexecutor.jsonStr }}
-{{ $key | quote | indent 6}}    : {{ $val | quote }},
-{{- end}}
-{{- range $key, $val:= .Values.qslexecutor.json }}
-{{ $key | quote | indent 6}}    : {{ $val }},
-{{- end}}
-      "END-OF-JSON": "CONFIG-FILE"
-    }
+    {{ template "bdi.merge.configvalues" (dict "Values" .Values.qslexecutor.config "Defaults" (include "qslexecutor.default" .)) }}
 
   qslmanager.json: |-
-    {
-      "path2GeneralConfigFile"  : "/etc/config/qslcommon.json",
-      "path4LogFiles"           : "/tmp/log/qslmanager",
-      "path2ModelStorage"       : "{{ .Values.output.path }}/config/indexer",
-      "path2DataStorage"        : "{{ .Values.data.path }}",
-      "path2SymbolStorage"      : "{{ .Values.output.path }}/SymbolOutput",
-      "path2SymbolPositions"    : "{{ .Values.output.path }}/SymbolPositions",
-      "path4HandleStorage"      : "{{ .Values.output.path }}/qsl_handles",
-      "path2A2AStorage"         : "{{ .Values.output.path }}/A2AOutput",
-{{- range $key, $val:= .Values.qslmanager.jsonStr }}
-{{ $key | quote | indent 6}}    : {{ $val | quote }},
-{{- end}}
-{{- range $key, $val:= .Values.qslmanager.json }}
-{{ $key | quote | indent 6}}    : {{ $val }},
-{{- end}}
-      "END-OF-JSON": "CONFIG-FILE"
-    }
+    {{ template "bdi.merge.configvalues" (dict "Values" .Values.qslmanager.config "Defaults" (include "qslmanager.default" .)) }}
 
   qslworker.json: |-
-    {
-      "path2GeneralConfigFile"  : "/etc/config/qslcommon.json",
-      "path4LogFiles"           : "/tmp/log/qslworker",
-      "workerIndexletCachePath" : "/tmp/cache/indexlets",
-{{- range $key, $val:= .Values.qslworker.jsonStr }}
-{{ $key | quote | indent 6}}    : {{ $val | quote }},
-{{- end}}
-{{- range $key, $val:= .Values.qslworker.json }}
-{{ $key | quote | indent 6}}    : {{ $val }},
-{{- end}}
-      "END-OF-JSON": "CONFIG-FILE"
-    }
+    {{ template "bdi.merge.configvalues" (dict "Values" .Values.qslworker.config "Defaults" (include "qslworker.default" .)) }}
 
-{{- end}}
+
+## Note that in the various *.default sub-templates below you can only have
+## default value types of string.   There seems to be no way get a merge of these
+## defaults to merge as a non-string type (e.g., integer).
+## So if you need an integer or bool or other non-string default value for a key
+## then you will need to add it into the relevant values.yaml qsl*.config section.
+
+{{- define "qslcommon.default" -}}
+indexerRegistryHost     : "{{ template "bdi.registry.fullname" . }}"
+qslRegistryHost         : "{{ template "bdi.qslexecutor.fullname" . }}"
+path2DMSchemaFile       : "{{ .Values.output.path }}/config/indexer"
+path2IndexletStorage    : "{{ .Values.output.path }}/IndexOutput"
+path2A2AStorageRoot     : "{{ .Values.output.path }}/A2AOutput"
+path2SymbolPositions    : "{{ .Values.output.path }}/SymbolPositions"
+{{- end -}}
+
+{{- define "qslexecutor.default" -}}
+{{- if hasKey .Values.qslexecutor.config "pathForLogFiles" }}
+path4LogFiles           : "{{ .Values.qslexecutor.config.pathForLogFiles }}/qslexecutor"
+{{- end }}
+{{- if hasKey .Values.qslcommon.config "pathForLogFiles" }}
+path4LogFiles           : "{{ .Values.qslcommon.config.pathForLogFiles }}/qslexecutor"
+{{- end }}
+path2GeneralConfigFile  : "/etc/config/qslcommon.json"
+{{- end -}}
+
+{{- define "qslmanager.default" -}}
+{{- if hasKey .Values.qslmanager.config "pathForLogFiles" }}
+path4LogFiles           : "{{ .Values.qslmanager.config.pathForLogFiles }}/qslmanager"
+{{- end }} 
+{{- if hasKey .Values.qslcommon.config "pathForLogFiles" }}
+path4LogFiles           : "{{ .Values.qslcommon.config.pathForLogFiles }}/qslmanager"
+{{- end }}
+path2GeneralConfigFile  : "/etc/config/qslcommon.json"
+path2ModelStorage       : "{{ .Values.output.path }}/config/indexer"
+path2DataStorage         : "{{ .Values.data.path }}"
+path2SymbolStorage       : "{{ .Values.output.path }}/SymbolOutput"
+path4HandleStorage      : "{{ .Values.output.path }}/qsl_handles"
+path2A2AStorage         : "{{ .Values.output.path }}/A2AOutput"
+{{- end -}}
+
+{{- define "qslworker.default" -}}
+{{- if hasKey .Values.qslworker.config "pathForLogFiles" }}
+path4LogFiles           : "{{ .Values.qslworker.config.pathForLogFiles }}/qslworker"
+{{- end }}
+{{- if hasKey .Values.qslcommon.config "pathForLogFiles" }}
+path4LogFiles           : "{{ .Values.qslcommon.config.pathForLogFiles }}/qslworker"
+{{- end }}
+path2GeneralConfigFile  : "/etc/config/qslcommon.json"
+workerIndexletCachePath : "/tmp/cache/indexlets"
+{{- end }}

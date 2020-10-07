@@ -21,34 +21,37 @@ spec:
       - name: {{ template "bdi.brokerservice.fullname" . }}
         image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+{{- if and (hasKey .Values.brokerservice "enableFileConnectorService") (.Values.brokerservice.enableFileConnectorService) }}
+        command: ["/home/ubuntu/dist/file_connector/abdi_file_connector"]
+{{ else }}
         command: ["/home/ubuntu/dist/data_broker/abdi_data_broker"]
+{{ end }}
         args:
         - -e
         - "$(HOST_IP)"
         - -r
-{{- if .Values.autostartServices }}
         - "{{ template "bdi.registry.fullname" . }}"
-{{- else}}
-        - "{{ template "bdi.indexingmanager.fullname" . }}"
-{{- end}}
         - -l
         - "{{.Values.acceptLicense}}"
         ports:
         - containerPort: {{ .Values.brokerservice.containerPort }}
           hostPort: {{ .Values.brokerservice.hostPort }}
         env:
-        {{- if .Values.sourcecloudgw.enabled }}
-        - name: SOURCE_GW_KEY
-          value: {{ .Values.sourcecloudgw.accessKey | quote }}
-        - name: SOURCE_GW_SECRET
-          value: {{ .Values.sourcecloudgw.secretKey | quote }}
-        {{- end }}
-        {{- if .Values.outputcloudgw.enabled }}
-        - name: OUTPUT_GW_KEY
-          value: {{ .Values.outputcloudgw.accessKey | quote }}
-        - name: OUTPUT_GW_SECRET
-          value: {{ .Values.outputcloudgw.secretKey | quote }}
-        {{- end }}
+        - name: REGISTRY_URI
+          value: "{{ template "bdi.registry.fullname" . }}:55057"
+        - name: PERSISTENCE_URI
+          value: "{{ template "bdi.persistence.fullname" . }}:55010"
+        - name: LOGGING_SETTINGS_FILE
+          value: "/etc/config/logging/loggingsettings.json"
+        {{- if .Values.pathToIndexingLoggingSettingsFile}}
+        - name: LOGGING_SETTINGS_FILE
+          value: {{ .Values.pathToIndexingLoggingSettingsFile | quote }}
+        {{- end}}
+        {{- if .Values.brokerservice }} {{- if .Values.brokerservice.pathToIndexingLoggingSettingsFile}}
+        - name: LOGGING_SETTINGS_FILE
+          value: {{ .Values.brokerservice.pathToIndexingLoggingSettingsFile | quote }}
+        {{- end}} {{- end}}
+        {{- include "bdi.cloudSync.exportSettings" . | indent 8 }}
         - name: HOST_IP
           valueFrom:
             fieldRef:
@@ -58,6 +61,8 @@ spec:
             name: data-pv
           - mountPath: {{ .Values.output.path }}
             name: output-pv
+          - name: logging-volume
+            mountPath: /etc/config/logging
       volumes:
         {{- if .Values.data.persistence.enabled }}
         - name: data-pv
@@ -77,4 +82,7 @@ spec:
           hostPath:
             path: {{ .Values.output.persistence.folder }}
         {{- end }}
+        - name: logging-volume
+          configMap:
+            name: {{ template "bdi.brokerservice.logging.fullname" . }}
 {{- end }}

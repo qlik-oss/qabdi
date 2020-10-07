@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bdi-mc.fullname" . }}
+  labels:
+    app: {{ template "bdi-mc.fullname" . }}
+    chart: {{ template "bdi-mc.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "bdi-mc.fullname" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "bdi-mc.fullname" . }}
+        release: {{ .Release.Name }}
+      annotations:
+{{ toYaml .Values.annotations | indent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+      {{- if .Values.additionalAffinities }}
+      affinity:
+{{ toYaml .Values.additionalAffinities | indent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+      {{- end }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+      containers:
+        - name: {{ template "bdi-mc.fullname" . }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/srv/dist/mgmtsrv"]
+          args: [
+            "-path", "/srv/dist/",
+            "-api-host", "{{ template "bdimain.restapi.fullname" . }}",
+            "-api-port", "8080"
+          ]
+          env:
+            - name: ACCEPT_QULA
+              value: {{ .Values.acceptLicense | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            privileged: {{ .Values.image.privileged }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          volumeMounts:
+            []
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+      volumes:
+        []

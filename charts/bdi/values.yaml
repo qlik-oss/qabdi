@@ -7,7 +7,7 @@
 image:
   registry: ghcr.io
   repository: qlik-oss/bdiproduct
-  tag: 5.1.0
+  tag: 6.78.0
   # pullPolicy: IfNotPresent
 
   ## Enable privileged mode for all pods.
@@ -23,15 +23,14 @@ imagePullSecrets:
 ##
 acceptLicense: false
 
-autostartServices: false
-
-## License configuration for BDI.
-##
-license:
-
-  ## QBDI License key.
-  ##
-  key: ""
+## licenses contains the configurations for the licenses sub-chart
+licenses:
+  abdi: true
+  replicaCount: 1
+  license:
+    key: ""
+  mongodb:
+    enabled: false
 
 ## Enable crash handling including upload to dump server.
 ##
@@ -81,16 +80,14 @@ indexer:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   tolerations: []
 
-  config: {}
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
 
   ## Service configuration.
   ## ref: https://kubernetes.io/docs/user-guide/services/
   ##
   service:
-    ## Configuration for allowing services to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
 
   ## Strategy for StatefulSet updates (requires Kubernetes 1.6+)
   ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset
@@ -148,7 +145,9 @@ indexingmanager:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   tolerations: []
 
-  config: {}
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
 
   ## Service configuration.
   ## ref: https://kubernetes.io/docs/user-guide/services/
@@ -158,11 +157,6 @@ indexingmanager:
     ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
     ##
     type: ClusterIP
-
-    ## Configuration for allow containers to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
 
   ## Ingress configuration.
   ## ref: https://kubernetes.io/docs/user-guide/ingress/
@@ -236,6 +230,10 @@ registry:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   tolerations: []
 
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
   ## Service configuration.
   ## ref: https://kubernetes.io/docs/user-guide/services/
   ##
@@ -290,9 +288,8 @@ persistence:
   tolerations: []
 
   config:
-    serverThreads: 1
-
-    threadsPerConcurrentQueue: 1
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
 
   ## Service configuration.
   ## ref: https://kubernetes.io/docs/user-guide/services/
@@ -385,6 +382,25 @@ managementconsole:
     #     hosts:
     #       - domain.example.com
 
+## Common configuration settings for all indexing components.
+## Note that setting the same-named value in a specific index will override
+## any settings in the this common section.
+indexingcommon:
+  config:
+    # {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
+    pathForLogFiles: "/home/output/logs"
+    # logLevel: 3
+    # logToConsole: true
+    # maxLogFileSizeInKB: 5120
+    maxLogFilesToKeep: 3
+    # debugLogLevel: 0
+    # debugLogFilter: ""
+    # debugShowFilter: false
+    # dtLogDetailedFuncName: 1
+    # useLoggerAssert: 0
+
 ## Configuration values for BDI QSL Executor components.
 ##
 qslexecutor:
@@ -438,22 +454,15 @@ qslexecutor:
     ##
     type: ClusterIP
 
-    ## Configuration for allow containers to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
-
   ## Used for generating qslexecutor.json configMap file for custom reloadable config elements in QSLP
   ##
-  jsonStr:
-    ## JSON keys/values where the value should be a string in the resulting JSON file.
-    exampleStr: "Do not delete"
-  json:
-    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
-    exampleVal: 0
-    maxSecWaitBefore1stLoadbal: 60
-    idxltUpdateCheckFreqMS: 60000
+  config:
+    # {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
     maxConcurrentQueryExecs: 300
+    # maxSecWaitBefore1stLoadbal: 60
+    # idxltUpdateCheckFreqMS: 60000
 
 ## Configuration values for BDI QSL Manager components.
 ##
@@ -507,11 +516,6 @@ qslmanager:
     ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
     ##
     type: ClusterIP
-
-    ## Configuration for allow containers to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
 
     ## Annotations for the qslmanager service.
     ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
@@ -606,28 +610,25 @@ qslmanager:
 
   ## Used for generating qslmanager.json configMap file for custom reloadable config elements in QSLP
   ##
-  jsonStr:
-    ## JSON keys/values where the value should be a string in the resulting JSON file.
-    exampleStr: "Do not delete"
-  json:
-    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
-    exampleVal: 0
-    resultServerPort: 55002
-    inferenceResultCacheSize: 1000
-    managerInferenceRunCacheTrimThres: 75
-    managerInferenceRunCachePurgeThres: 90
-    useConnector: true
-    connectorReadsRgsInParallel: false
-    printParsedQuery: false
-    logQueries: false
-    logResults: false
-    logQueryResponse2Console: true
-    logParserTree: false
-    logSymbolFetchPerformancePartialResult: true
-    ErrorMsgFull: true
-    ErrorMsgDetails: false
-    ErrorMsgCodeNumbers: false
-    ErrorMsgCodeStrs: false
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
+    # resultServerPort: 55002
+    # inferenceResultCacheSize: 1000
+    # managerInferenceRunCacheTrimThres: 75
+    # managerInferenceRunCachePurgeThres: 90
+    # connectorReadsRgsInParallel: false
+    # printParsedQuery: false
+    # logQueries: false
+    # logResults: false
+    # logQueryResponse2Console: true
+    # logParserTree: false
+    # logSymbolFetchPerformancePartialResult: true
+    # ErrorMsgFull: true
+    # ErrorMsgDetails: false
+    # ErrorMsgCodeNumbers: false
+    # ErrorMsgCodeStrs: false
 
 ## Configuration values for BDI QSL Worker components.
 ##
@@ -677,10 +678,6 @@ qslworker:
   ## ref: https://kubernetes.io/docs/user-guide/services/
   ##
   service:
-    ## Configuration for allow containers to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
 
   ## Strategy for StatefulSet updates (requires Kubernetes 1.6+)
   ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset
@@ -696,48 +693,45 @@ qslworker:
 
   ## Used for generating qslworker.json configMap file for custom reloadable config elements in QSLP
   ##
-  jsonStr:
-    ## JSON keys/values where the value should be a string in the resulting JSON file.
-    exampleStr: "Do not delete"
-  json:
-    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
-    exampleVal: 0
-    workerWarnLevelPctToThrottle: 90
-    workerWarnLevelThrottleMaxSec: 30
-    workerWarnThrottleProtocol: 0
-    workerSubResultCacheCapacity: 100
-    workerQueryStaggerMinTimeMSec: 3000
-    workerQueryStaggerPct: 70
-    workerQueryMaxTimeQueuedSec: 30
-    localGrouping: false
-    distinctv2: true
-    logQueryGraphHistory: 0
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
+    # workerWarnLevelPctToThrottle: 90
+    # workerWarnLevelThrottleMaxSec: 30
+    # workerWarnThrottleProtocol: 0
+    # workerSubResultCacheCapacity: 100
+    # workerQueryStaggerMinTimeMSec: 3000
+    # workerQueryStaggerPct: 70
+    # workerQueryMaxTimeQueuedSec: 30
+    # localGrouping: false
+    # distinctv2: true
+    # logQueryGraphHistory: 0
 
 ## Used for generating qslcommon.json configMap file for custom reloadable config elements in QSLP
 ##
 qslcommon:
-  jsonStr:
-    ## JSON keys/values where the value should be a string in the resulting JSON file.
-    exampleStr: "Do not delete"
-    indexerRegistryPort: "55057"
-    qslRegistryPort: "44000"
-  json:
-    ## JSON keys/values where the value should NOT be a string in the resulting JSON file.
-    exampleVal: 0
-    maxDiags: 0
-    memWarnLevelsPercentages: "[80,90,95,100]"
-    memWarnPurgePercentage: 90
-    logLevel: 3
-    perfLogLevel: 2
-    logIncludeIPInLogHeader: true
-    logIncludePortInLogHeader: false
-    maxLogFileSizeInKB: 5120
-    maxLogFilesToKeep: 10
-    detailedLogFileName: true
-    logToConsole: true
-    maxColumnSymbolCacheCapacity: 100000
-    distinctSymbolCacheWarmup: true
-    setAnalysisEnabled: true
+  config:
+    # {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
+    pathForLogFiles: "/home/output/logs"
+    # indexerRegistryPort: 55057
+    # qslRegistryPort: 44000
+    # maxDiags: 0
+    # memWarnLevelsPercentages: [80,90,95,100]
+    # memWarnPurgePercentage: 90
+    # logLevel: 3
+    # perfLogLevel: 2
+    # logIncludeIPInLogHeader: true
+    # logIncludePortInLogHeader: false
+    # maxLogFileSizeInKB: 5120
+    # maxLogFilesToKeep: 10
+    # detailedLogFileName: true
+    # logToConsole: true
+    # maxColumnSymbolCacheCapacity: 100000
+    # distinctSymbolCacheWarmup: true
+    # setAnalysisEnabled: true
 
 ## Configuration values for BDI REST API components.
 ##
@@ -871,16 +865,14 @@ symbolserver:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   tolerations: []
 
-  config: {}
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
 
   ## Service configuration.
   ## ref: https://kubernetes.io/docs/user-guide/services/
   ##
   service:
-    ## Configuration for allow containers to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
 
   ## Strategy for StatefulSet updates (requires Kubernetes 1.6+)
   ## Ref: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset
@@ -1006,54 +998,6 @@ output:
       ##
       # plugin:
 
-## Configuration values for BDI Disk Cache daemon set.
-##
-cache:
-  enabled: false
-
-  ## Path where volumes are mounted to inside pods.
-  ##
-  path: /home/cache
-
-  ## Location of data on the physical nodes.
-  ##
-  folder: cache
-
-  ## Override the components name (defaults to cache).
-  ##
-  # nameOverride:
-
-  ## Configure resource requests and limits.
-  ## ref: https://kubernetes.io/docs/user-guide/compute-resources/
-  ##
-  resources: {}
-  #  requests:
-  #    cpu: "100m"
-  #    memory: "128Mi"
-
-  ## Annotations for the cache daemonset.
-  ## Ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/
-  annotations: {}
-
-  ## Tolerations for the cache pods.
-  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  tolerations: []
-
-  ## Service configuration.
-  ## ref: https://kubernetes.io/docs/user-guide/services/
-  ##
-  service:
-    ## Service type for the cache service.
-    ## ref: https://kubernetes.io/docs/user-guide/services/#publishing-services---service-types
-    ##
-    type: ClusterIP
-
-    ## Configuration for allow containers to accept SSH connections.
-    ##
-    ssh:
-      enabled: true
-
-
 ## Configuration values for the redis-ha dependency.
 ## Ref: https://github.com/helm/charts/blob/master/stable/redis-ha
 ##
@@ -1084,60 +1028,63 @@ redis-ha:
 nginx-ingress:
   enabled: false
 
-## Google configuration when using Google Cloud Storage.
-##
-google:
-
-  ## JSON credentials file. Use --set-file to pass it to helm install.
-  ##
-  credentials: ""
-
-  ## Google project ID for cloud storage.
-  ##
-  projectId: ""
-
 ## Configuration for the sourcecloudgw.
 ## Ref: https://github.com/helm/charts/tree/master/stable/minio
 ##
 sourcecloudgw:
-
-  ## Enables the sourcecloudgw service.
-  ##
   enabled: false
+  mountPath: "/data"
+  persistence:
+    size: 10Gi
 
-  ## Gateway type, any of "s3", "azure" or "gcs"
-  ## Set to empty string (i.e. "") for server mode
-  ##
-  gateway: s3
+  ## Default access key
+  # accessKey: ""
+  # secretKey: ""
 
-  ## Access key (s3, gcs) or storage account name (azure).
-  ##
-  accessKey: ""
+  s3gateway:
+    enabled: false
+    replicas: 1
+    # accessKey: ""
+    # secretKey: ""
 
-  ## Access secret.
-  ##
-  secretKey: ""
+  azuregateway:
+    enabled: false
+
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 15
+
+  livenessProbe:
+    periodSeconds: 30
 
 ## Configuration for the outputcloudgw.
 ## Ref: https://github.com/helm/charts/tree/master/stable/minio
 ##
 outputcloudgw:
-
-  ## Enables the outputcloudgw service.
-  ##
   enabled: false
+  mountPath: "/output"
+  persistence:
+    size: 10Gi
 
-  ## Gateway type, any of "s3", "azure" or "gcs"
-  ## Set to empty string (i.e. "") for server mode
-  gateway: s3
+  ## Default access key
+  # accessKey: ""
+  # secretKey: ""
 
-  ## Access key (s3, gcs) or storage account name (azure).
-  ##
-  accessKey: ""
+  s3gateway:
+    enabled: false
+    replicas: 1
+    # accessKey: ""
+    # secretKey: ""
 
-  ## Access secret.
-  ##
-  secretKey: ""
+  azuregateway:
+    enabled: false
+
+  readinessProbe:
+    initialDelaySeconds: 60
+    periodSeconds: 15
+
+  livenessProbe:
+    periodSeconds: 30
 
 brokerservice:
 
@@ -1156,3 +1103,18 @@ brokerservice:
   # Port to expose on the host (node) where broker service runs.
   #
   hostPort: 8082
+
+  config:
+    {}
+    ## comment out or remove the {} line above if you add 1 or more values below
+
+cloudSync:
+  {}
+  ## comment out or remove the {} line above if you add 1 or more values below
+  # File size in bytes to skip CRC check in cloud sync, quote the value to avoid conversion with scientific notation
+  # checkCRCFileSizeLimit: "0"
+
+  # Retry settings
+  # maxRetries: "10"
+  # maxSleepForSeconds: "60"
+  # waitIntervalInc: "1"

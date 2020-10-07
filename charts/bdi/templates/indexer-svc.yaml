@@ -15,13 +15,6 @@ spec:
       targetPort: indexer
       protocol: TCP
       name: indexer
-    {{- if not (.Values.autostartServices) }}
-    {{- if .Values.indexer.service.ssh.enabled }}
-    - port: 22
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-    {{- end }}{{- end }}
   selector:
     app: {{ template "bdi.indexer.fullname" . }}
     release: {{ .Release.Name }}

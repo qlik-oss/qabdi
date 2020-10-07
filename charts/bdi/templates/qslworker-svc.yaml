@@ -19,14 +19,6 @@ spec:
       targetPort: qslworker-r
       protocol: TCP
       name: qslworker-r
-{{- if not (.Values.autostartServices) }}
-    {{- if .Values.qslworker.service.ssh.enabled }}
-    - port: 22
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-    {{- end }}
-{{- end }}
   selector:
     app: {{ template "bdi.qslworker.fullname" . }}
     release: {{ .Release.Name }}

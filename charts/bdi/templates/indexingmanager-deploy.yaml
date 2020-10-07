@@ -39,7 +39,6 @@ spec:
         - name: {{ template "bdi.indexingmanager.fullname" . }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- if .Values.autostartServices }}
           command: ["/home/ubuntu/dist/indexer/abdi_indexing_server"]
           args:
           - -s
@@ -51,24 +50,36 @@ spec:
           env:
           - name: KUBERNETES_MODE
             value: "true"
-          - name: REGISTRY_URI
-            value: "{{ template "bdi.registry.fullname" . }}:55057"
-          {{- if hasKey .Values.indexingmanager.config "serverThreads" }}
           - name: ASYNC_SERVER_THREADS
+          {{- if hasKey .Values.indexingmanager.config "serverThreads" }}
             value: "{{ .Values.indexingmanager.config.serverThreads | default 1  }}"
+          {{- else }}
+            value: "10"
           {{- end }}
           {{- if hasKey .Values.indexingmanager.config "threadsPerConcurrentQueue" }}
           - name: THREADS_PER_CQ
             value: "{{ .Values.indexingmanager.config.threadsPerConcurrentQueue | default 1  }}"
           {{- end }}
-{{- else }}
-          command: ['sh', '-c']
-          args:
-            - env > /etc/environment && /usr/sbin/sshd -D
-          env:
-{{- end }}
+          - name: LOGGING_SETTINGS_FILE
+            value: "/etc/config/logging/loggingsettings.json"
+          {{- if .Values.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}}
+          {{- if .Values.indexingmanager }} {{- if .Values.indexingmanager.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.indexingmanager.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}} {{- end}}
           - name: ACCEPT_QULA
             value: {{ .Values.acceptLicense | quote }}
+          - name: REGISTRY_URI
+            value: "{{ template "bdi.registry.fullname" . }}:55057"
+          - name: PERSISTENCE_URI
+            value: "{{ template "bdi.persistence.fullname" . }}:55010"
+          - name: MIN_SERVICE_COUNT_Indexer
+            value: {{ .Values.indexer.replicaCount | quote }}
+          - name: MIN_SERVICE_COUNT_Symbol
+            value: {{ .Values.symbolserver.replicaCount | quote }}
           {{- if .Values.indexingmanager.resources.requests }}
           {{- if .Values.indexingmanager.resources.requests.cpu }}
           - name: INDEXING_VCPU_REQUEST
@@ -97,18 +108,7 @@ spec:
             value: {{ .Values.indexingmanager.resources.limits.memory | default "" | quote }}
           {{- end }}
           {{- end }}
-          {{- if .Values.sourcecloudgw.enabled }}
-          - name: SOURCE_GW_KEY
-            value: {{ .Values.sourcecloudgw.accessKey | quote }}
-          - name: SOURCE_GW_SECRET
-            value: {{ .Values.sourcecloudgw.secretKey | quote }}
-          {{- end }}
-          {{- if .Values.outputcloudgw.enabled }}
-          - name: OUTPUT_GW_KEY
-            value: {{ .Values.outputcloudgw.accessKey | quote }}
-          - name: OUTPUT_GW_SECRET
-            value: {{ .Values.outputcloudgw.secretKey | quote }}
-          {{- end }}
+          {{- include "bdi.cloudSync.exportSettings" . | indent 10 }}
           - name: ENABLE_CRASH_DUMP
             value: {{ .Values.enableCrashDumpUpload | quote }}
           ports:
@@ -118,19 +118,6 @@ spec:
             - name: indexing
               containerPort: 55020
               protocol: TCP
-{{- if not (.Values.autostartServices) }}
-            - name: persistence
-              containerPort: 55010
-              protocol: TCP
-            - name: registry
-              containerPort: 55057
-              protocol: TCP
-            {{- if .Values.indexingmanager.service.ssh.enabled }}
-            - name: ssh
-              containerPort: 22
-              protocol: TCP
-            {{- end }}
-{{- end }}
           securityContext:
             privileged: {{ .Values.image.privileged }}
             {{- if .Values.enableCrashDumpUpload }}
@@ -138,13 +125,11 @@ spec:
               add:
                 - SYS_PTRACE
             {{- end }}
-          {{- if .Values.autostartServices }}
           readinessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:55020", "-service=readiness"]
             initialDelaySeconds: 3
             periodSeconds: 5
-          {{- end }}
           resources:
 {{ toYaml .Values.indexingmanager.resources | indent 12 }}
           volumeMounts:
@@ -152,14 +137,8 @@ spec:
               name: data-pv
             - mountPath: {{ .Values.output.path }}
               name: output-pv
-            {{- if .Values.cache.enabled }}
-            - mountPath: {{ .Values.cache.path }}
-              name: cache-pv
-            {{- end }}
-            {{- if .Values.autostartServices }}
             - name: logging-volume
               mountPath: /etc/config/logging
-            {{- end }}
       volumes:
         {{- if .Values.data.persistence.enabled }}
         - name: data-pv
@@ -179,13 +158,6 @@ spec:
           hostPath:
             path: {{ .Values.output.persistence.folder }}
         {{- end }}
-        {{- if .Values.cache.enabled }}
-        - name: cache-pv
-          hostPath:
-            path: {{ .Values.cache.folder }}
-        {{- end }}
-        {{- if .Values.autostartServices }}
         - name: logging-volume
           configMap:
             name: {{ template "bdi.indexingmanager.logging.fullname" . }}
-        {{- end }}

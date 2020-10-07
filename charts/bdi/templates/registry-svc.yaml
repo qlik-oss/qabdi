@@ -1,4 +1,3 @@
-{{- if .Values.autostartServices }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -20,4 +19,3 @@ spec:
   selector:
     app: {{ template "bdi.registry.fullname" . }}
     release: {{ .Release.Name }}
-{{- end}}

@@ -1,4 +1,3 @@
-{{- if .Values.autostartServices }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -61,6 +60,16 @@ spec:
             value: "true"
           - name: ACCEPT_QULA
             value: {{ .Values.acceptLicense | quote }}
+          - name: LOGGING_SETTINGS_FILE
+            value: "/etc/config/logging/loggingsettings.json"
+          {{- if .Values.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}}
+          {{- if .Values.registry }} {{- if .Values.registry.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.registry.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}} {{- end}}
           {{- if .Values.registry }}{{- if .Values.registry.resources }}
           {{- if .Values.registry.resources.requests }}
           {{- if .Values.registry.resources.requests.cpu }}
@@ -111,10 +120,6 @@ spec:
               name: data-pv
             - mountPath: {{ .Values.output.path }}
               name: output-pv
-            {{- if .Values.cache.enabled }}
-            - mountPath: {{ .Values.cache.path }}
-              name: cache-pv
-            {{- end }}
             - name: logging-volume
               mountPath: /etc/config/logging
       volumes:
@@ -136,12 +141,6 @@ spec:
           hostPath:
             path: {{ .Values.output.persistence.folder }}
         {{- end }}
-        {{- if .Values.cache.enabled }}
-        - name: cache-pv
-          hostPath:
-            path: {{ .Values.cache.folder }}
-        {{- end }}
         - name: logging-volume
           configMap:
             name: {{ template "bdi.registry.logging.fullname" . }}
-{{- end}}

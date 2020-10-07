@@ -18,22 +18,6 @@ spec:
       targetPort: indexing
       protocol: TCP
       name: indexing
-{{- if not (.Values.autostartServices) }}
-    - port: 55010
-      targetPort: persistence
-      protocol: TCP
-      name: persistence
-    - port: 55057
-      targetPort: registry
-      protocol: TCP
-      name: registry
-    {{- if .Values.indexingmanager.service.ssh.enabled }}
-    - port: 22
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-    {{- end }}
-{{- end }}
   selector:
     app: {{ template "bdi.indexingmanager.fullname" . }}
     release: {{ .Release.Name }}

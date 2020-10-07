@@ -1,9 +1,21 @@
 dependencies:
+- name: licenses
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 1.21.5
+- name: bdi-mc
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 0.2.19
 - name: nginx-ingress
   repository: https://kubernetes-charts.storage.googleapis.com/
-  version: 1.10.3
+  version: 1.39.0
 - name: redis-ha
   repository: https://kubernetes-charts.storage.googleapis.com/
   version: 3.6.1
-digest: sha256:fb3d8837a1b42063e4c651dbbb0288dd8b2bfa6a0e7f5732065fa111964e3e1f
-generated: "2019-12-05T09:56:03.622953+01:00"
+- name: minio
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  version: 5.0.25
+- name: minio
+  repository: https://kubernetes-charts.storage.googleapis.com/
+  version: 5.0.25
+digest: sha256:4164353d5b95464099978c7c2075a56091974dba6733c3e2328a7d69743bb67d
+generated: "2020-09-22T11:46:51.711766436Z"

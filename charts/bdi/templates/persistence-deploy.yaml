@@ -1,4 +1,3 @@
-{{- if .Values.autostartServices }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -57,6 +56,16 @@ spec:
           env:
           - name: ACCEPT_QULA
             value: {{ .Values.acceptLicense | quote }}
+          - name: LOGGING_SETTINGS_FILE
+            value: "/etc/config/logging/loggingsettings.json"
+          {{- if .Values.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}}
+          {{- if .Values.persistence }} {{- if .Values.persistence.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.persistence.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}} {{- end}}
           {{- if .Values.persistence }} {{- if .Values.persistence.resources}}
           {{- if .Values.persistence.resources.requests }}
           {{- if .Values.persistence.resources.requests.cpu }}
@@ -79,9 +88,11 @@ spec:
           {{- end }}
           {{- end }}
           {{- end }}{{- end }}
-          {{- if hasKey .Values.persistence.config "serverThreads" }}
           - name: ASYNC_SERVER_THREADS
+          {{- if hasKey .Values.persistence.config "serverThreads" }}
             value: "{{ .Values.persistence.config.serverThreads | default 1  }}"
+          {{- else }}
+            value: "10"
           {{- end }}
           {{- if hasKey .Values.persistence.config "threadsPerConcurrentQueue" }}
           - name: THREADS_PER_CQ
@@ -107,10 +118,6 @@ spec:
             value: "{{ .Values.data.cloudPath }}"
           - name: SOURCE_GATEWAY_URI
             value: "{{ template "bdi.sourcecloudgw.fullname" . }}:9000"
-          - name: SOURCE_GW_KEY
-            value: {{ .Values.sourcecloudgw.accessKey | quote }}
-          - name: SOURCE_GW_SECRET
-            value: {{ .Values.sourcecloudgw.secretKey | quote }}
 {{- end }}
 # Output data
           - name: OUTPUT_ROOT_PATH
@@ -120,30 +127,23 @@ spec:
             value: "{{ .Values.output.cloudPath }}"
           - name: OUTPUT_GATEWAY_URI
             value: "{{ template "bdi.outputcloudgw.fullname" . }}:9000"
-          - name: OUTPUT_GW_KEY
-            value: {{ .Values.outputcloudgw.accessKey | quote }}
-          - name: OUTPUT_GW_SECRET
-            value: {{ .Values.outputcloudgw.secretKey | quote }}
 {{- end }}
-# Indexer settings
-          - name: INDEXER_COLUMN_INDEX_THREADS
-            value: "{{ .Values.indexer.config.serverThreads | default 1  }}"
+# Cloud Sync settings
+          {{- include "bdi.cloudSync.exportSettings" . | indent 10 }}
 # Symbol server settings
+          {{- if hasKey .Values.symbolserver.config "serverThreads" }}
           - name: SYMBOL_SERVER_THREADS
             value: "{{ .Values.symbolserver.config.serverThreads | default 1  }}"
+          {{- end }}
           - name: SYMBOL_SERVER_OPTIONS_FILE
             value: ""
+# Indexer server sertings
+          {{- if hasKey .Values.indexer.config "serverThreads" }}
+          - name: INDEXER_COLUMN_INDEX_THREADS
+            value: "{{ .Values.indexer.config.serverThreads | default 1  }}"
+          {{- end }}
 # Internal settings
 {{- if hasKey .Values "internal" }}
-          {{- if hasKey .Values.internal "useConnector" }}
-          - name: INDEXING_MANAGER_USE_CONNECTOR
-            value: "{{ .Values.internal.useConnector }}"
-          - name: INDEXER_USE_CONNECTOR
-            value: "{{ .Values.internal.useConnector }}"
-          - name: SYMBOL_SERVER_CREATION_USE_CONNECTOR
-            value: "{{ .Values.internal.useConnector }}"
-          {{- end }}
-
           {{- if hasKey .Values.internal "parallellSymbolCreation" }}
           - name: SYMBOL_SERVER_PARALLELL_SYMBOL_CREATION
             value: "{{ .Values.internal.parallellSymbolCreation }}"
@@ -160,7 +160,20 @@ spec:
           - name: INDEXER_ROWS_LIMIT
             value: "{{ .Values.internal.rowsLimit | default 0  }}"
           {{- end }}
+          {{- if hasKey .Values.internal "symbolEncodingBase32hex" }}
+          - name: SYMBOL_ENCODINGS_BASE32HEX
+            value: "{{ .Values.internal.symbolEncodingBase32hex | default true  }}"
+          {{- end }}
+          {{- if hasKey .Values.internal "symbolEncodingFullString" }}
+          - name: SYMBOL_ENCODINGS_FULLSTRING
+            value: "{{ .Values.internal.symbolEncodingFullString | default false  }}"
+          {{- end }}
 {{- end }}
+# data broker settings
+          {{- if hasKey .Values.brokerservice "enableFileConnectorService" }}
+          - name: ENABLE_FILE_CONNECTOR_SERVICE
+            value: "{{ .Values.brokerservice.enableFileConnectorService | default 0  }}"
+          {{- end }}
 
           ports:
             - name: persistence
@@ -178,6 +191,8 @@ spec:
           volumeMounts:
             - mountPath: {{ .Values.output.path }}
               name: output-pv
+            - name: logging-volume
+              mountPath: /etc/config/logging
       volumes:
         {{- if .Values.output.persistence.enabled }}
         - name: output-pv
@@ -188,4 +203,6 @@ spec:
           hostPath:
             path: {{ .Values.output.persistence.folder }}
         {{- end }}
-{{- end}}
+        - name: logging-volume
+          configMap:
+            name: {{ template "bdi.persistence.logging.fullname" . }}

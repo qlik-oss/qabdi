@@ -1,0 +1,5 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: {{ template "bdi.brokerservice.logging.fullname" . }}
+  {{- template "bdi.indexing.loggingsettings" (dict "Values" .Values "CompName" "brokerservice" "CompConfig" .Values.brokerservice.config ) }}

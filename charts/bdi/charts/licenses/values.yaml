@@ -1,0 +1,270 @@
+## Default values for Licenses Helm Chart.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+## Override the name of the Chart.
+##
+# nameOverride:
+
+image:
+  ## Licenses image.
+  ##
+  repository: licenses
+
+  ## Licenses image version.
+  ## ref: https://hub.docker.com/r/qlik/licenses/tags/
+  ##
+  tag: 3.21.0
+
+  ## Specify a imagePullPolicy: 'Always' if imageTag is 'latest', else set to 'IfNotPresent'.
+  ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # pullPolicy:
+
+  ## Specific registry for licenses. Adds possibility to override
+  ## default imageRegistry.
+  # registry:
+
+## Default registry where the repository is pulled from.
+## `global.imageRegistry` if set override this value.
+#
+imageRegistry: qliktech-docker.jfrog.io
+
+## Secrets for pulling images from a private docker registry.
+##
+imagePullSecrets:
+  - name: artifactory-docker-secret
+
+## See https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/#pod-s-dns-config
+dnsConfig:
+  options:
+    - name: timeout
+      value: '1'
+
+## Number of replicas.
+##
+replicaCount: 1
+
+## Annotations to be added to the pods .
+##
+podAnnotations: {}
+
+## deployment resources
+resources: {}
+#  requests:
+#    cpu: 0.2
+#    memory: "30Mi"
+#  limits:
+#    cpu: 0.3
+#    memory: "100Mi"
+electionResources: {}
+
+## Service configuration.
+## ref: https://kubernetes.io/docs/user-guide/services/
+##
+service:
+  type: ClusterIP
+  port: 9200
+
+## Ingress configuration.
+## ref: https://kubernetes.io/docs/user-guide/ingress/
+##
+ingress:
+  ## Annotations to be added to the ingress.
+  ##
+  annotations: []
+
+  ## class provides an kubernetes.io/ingress.class override of default nginx
+  class: "nginx"
+
+  ## authURL override of default http://{.Release.Name}-edge-auth.{.Release.Namespace}.svc.cluster.local:8080/v1/auth
+  authURL: "http://{{ .Release.Name }}-edge-auth.{{ .Release.Namespace }}.svc.cluster.local:8080/v1/auth"
+
+## Proxy configuration
+## Set the following values when deploying behind a proxy
+proxy:
+  ## The URI to the tunneling proxy scheme://host:port (e.g. http://proxy.company.com:8888)
+  uri:
+  ## The tunneling proxy authentication mode, empty implies no authentication. Available modes: basic|ntlm
+  authMode:
+  ## The tunneling proxy user
+  user:
+  ## The tunneling proxy user password
+  password:
+  ## The tunneling proxy NTLM domain (only used with NTLM authentication mode)
+  domain:
+
+## Metrics configuration
+metrics:
+  ## Prometheus configuration
+  prometheus:
+    ## prometheus.enabled determines whether the annotations for prometheus scraping are included
+    enabled: true
+
+## token authentication configuration
+tokenAuth:
+  ## tokenAuth.enabled Enables creation of auth token
+  enabled: true
+
+  ## tokenAuth.privateKey Private key used to sign auth token
+  privateKey: |
+    -----BEGIN EC PRIVATE KEY-----
+    MIGkAgEBBDD5BGFKQX981pUj+dwaJqn3TlMeSfPQxHVCKJlfKwBnhr6xjWaEH0ej
+    pS3nTQwNmUSgBwYFK4EEACKhZANiAAS2IWhY4cJjhKv/rCVq64ORQ01Y56PvoCO3
+    Vg23AduOLe/N0IKPedki7uWX73onXZz5yIS2GiTAWKkapoA2QLnHWOrC3wckz7AW
+    AjJtggeoCvTUhJmG6LY9SCJAwEO8xuM=
+    -----END EC PRIVATE KEY-----
+
+  ## tokenAuth.kid is the kid corresponding to the private key
+  kid: "_WChJV76hqP6rsnPFV44TNYUR1l4jweS612XuTMopz0"
+
+  ## tokenAuth.url specifies the url where to exchange private token to internal token
+  url: "http://{{ .Release.Name }}-edge-auth:8080/v1/internal-tokens"
+
+## NATS configuration
+nats:
+  ## nats.enabled enables sending all events to NATS
+  enabled: false
+
+  ## nats.podLabel required to allow communication with NATS
+  podLabel:
+    key: "{{ .Release.Name }}-nats-client"
+    ## For localdev use this configuration instead
+    # key: "messaging-nats-client"
+    value: true
+
+  ## nats.servers is a comma seperated list of NATS servers
+  servers: "nats://{{ .Release.Name }}-nats-client:4222"
+  ## For localdev use this configuration instead
+  # servers: "nats://messaging-nats-client:4222"
+
+  ## connectAttempts is number of connection attempts to create initial NATS connection
+  connectAttempts: 3
+
+  ## clusterName specifies the NATS Cluster name
+  # clusterName:
+
+  ## nats.group specifies the NATS group
+  # group:
+
+## MongoDB configuration
+mongodb:
+  ## Enables a local mongo chart
+  enabled: true
+
+  ## Bitnami MongoDB image tag
+  ## ref: https://hub.docker.com/r/bitnami/mongodb/tags/
+  ## This value overrides the mongo image tag in chart v.4.5.0 (tag: 4.0.3-debian-9)
+  image:
+    tag: 3.6.6-debian-9
+
+  ## Disable password for local dev mode
+  usePassword: false
+
+  ## Specify a custom mongo uri. Not needed when the local mongo is enabled.
+  ## Secret: {{ .Release.Name }}-mongoconfig.mongo-uri
+  # uri:
+
+  ## name of secret to mount for mongo URI. The secret must have the `mongodb-uri` key
+  # uriSecretName:
+
+## JWKS configuration
+jwks: {}
+  ## URI where the JWKS to validate JWTs is located. Overrides the default of http://{.Release.Name}-keys:8080/v1/keys/qlik.api.internal
+  ## uri:
+
+## PDS configuration
+pds:
+  ## Enables PDS
+  enabled: true
+
+  ## URI where the policy decisions resource is located. Overrides the default of http://{.Release.Name}-policy-decisions:5080
+  ## uri:
+
+## License serial number
+serial:
+  number:
+
+## License control number, required if serial is set
+control:
+  number:
+
+## License key, setting a signed license key instead of serial / control
+license:
+  key:
+
+## Tenant id
+tenant:
+  ## Tenant ID to associate the license with
+  id:
+
+## Log level
+log:
+  ## Available values: all|debug|warn|error|none|info
+  level:
+
+## Tracing
+tracing:
+  enabled: false
+
+## Test mode
+testmode:
+  ## If enabled in-memory storage is used, JWT signature verification is disabled and license consumption is disabled
+  enabled:
+
+## Cloud Services mode
+qcs:
+  ## If enabled license is check for Cloud Services flag
+  enabled:
+
+## Feature Flags configuration
+features:
+  ## URI where the feature flags resource is located - overrides the default of http://{.Release.Name}-feature-flags:8080/v1/features
+  ## uri:
+  ## If true, enable the Feature Flags cache
+  cache:
+    enabled: false
+
+serviceAccount:
+  name: licenses
+
+## Leader election sidecar container configuration.
+## Please override these values only if you know what you're doing.
+## ref: https://kubernetes.io/blog/2016/01/simple-leader-election-with-kubernetes/
+#
+leaderelection:
+  repository: leader-elector
+  tag: "1.8.0"
+
+## Assignments
+assignments:
+  sync:
+    enabled: true
+  excess:
+    enabled: true
+
+## SQS
+sqs:
+  ## If enabled, licenses will listen to notification from SQS
+  enabled: false
+  ## URI to SQS queue
+  queueUri:
+  ## aws region
+  awsRegion:
+
+## Rollbar configuration
+rollbar:
+  # enable Rollbar
+  enabled: false
+
+## Environment
+# environment:
+
+## HPA
+
+hpa:
+  enabled: false
+  minReplicas: 3
+  maxReplicas: 6
+  targetAverageUtilizationCpu: 75
+  targetAverageUtilizationMemory: 75

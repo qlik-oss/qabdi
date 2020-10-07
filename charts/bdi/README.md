@@ -16,6 +16,14 @@ $ helm install --name my-release .
 
 The command deploys bdi on the Kubernetes cluster in the default configuration.
 
+### Using a Local Chart Instead of qlik/bdi
+
+Sometimes you may have a local copy of a chart that you want to deploy (chart install) BDI with.  To do this you first need to pull in the dependencies for BDI deployment onto disk within your local chart.
+For example, assume you want to deploy using the local BDI Chart located in <your-oxpecker-k8s-repo>/helm/bdi, you would first need to execute:
+```console
+$ helm dependency update helm/bdi
+```
+
 ## Uninstalling the Chart
 
 To uninstall/delete the `my-release` deployment:
@@ -39,18 +47,17 @@ The following table lists the configurable parameters of the chart and their def
 | `enableCrashDumpUpload` | Enable crash dump handling including upload to dump server | `false` |
 | `image.registry` | image registry | `qliktech-docker.jfrog.io`|
 | `image.repository` | image name | `bdiproduct`|
-| `image.tag` | image version | `5.1.0` |
+| `image.tag` | image version | `6.78.0` |
 | `image.pullPolicy` | image pull policy | `Always` if `imageTag` is `latest`, else `IfNotPresent` |
 | `image.privileged` | Enable `privileged` mode for all pods | `false` |
 | `imagePullSecrets` | A list of secret names for accessing private image registries | `[{name: "artifactory-docker-secret"}]` |
-| `license.key` | QBDI license key | `""` |
+| `licenses.license.key` | QBDI license key | `""` |
 | `indexer.replicaCount` | Number of indexer replicas | `1` |
 | `indexer.resources` | Indexer resource limits | `{}` |
 | `indexer.additionalAffinities` | Additional affinities to apply to indexer pods. | `{}` |
 | `indexer.annotations` | Indexer deployment annotations | `{}` |
 | `indexer.nodeSelector` | Node selector for the indexer pods | `{}` |
 | `indexer.tolerations` | Tolerations for the indexer pods | `{}` |
-| `indexer.service.ssh.enabled` | Enable remote SSH access for indexer service | `true` |
 | `indexer.updateStrategy` | Strategy for StatefulSet updates | `RollingUpdate` |
 | `indexer.podManagementPolicy` | Pod Management strategy | `Parallel` |
 | `indexingmanager.replicaCount` | Number of indexing manager replicas | `1` |
@@ -60,7 +67,6 @@ The following table lists the configurable parameters of the chart and their def
 | `indexingmanager.nodeSelector` |  Node selector for the indexing manager pods | `{}` |
 | `indexingmanager.tolerations` | Tolerations for the indexing manager pods | `{}` |
 | `indexingmanager.service.type` | Indexing Manager service type | `ClusterIP` |
-| `indexingmanager.service.ssh.enabled` | Enable remote SSH access for indexing manager service | `true` |
 | `indexingmanager.ingress.enabled` | Enable Indexing Manager Ingress | `false` |
 | `indexingmanager.ingress.annotations` | Indexing Manager Ingress annotations | `{}` |
 | `indexingmanager.ingress.hosts` | Indexing Manager Ingress Hostnames | `[]` |
@@ -77,9 +83,10 @@ The following table lists the configurable parameters of the chart and their def
 | `managementconsole.ingress.hosts` | Management console Ingress Hostnames | `[]` |
 | `managementconsole.ingress.tls` | Management console Ingress TLS configuration | `[]` |
 | `outputcloudgw.enabled` | Enable syncing output to the cloud | `false` |
-| `outputcloudgw.gateway` | Gateway type: "s3", "azure", "gcs" or empty "" for server mode (local data) | `s3` |
-| `outputcloudgw.accessKey` | Access key for the cloud storage | `""` |
-| `outputcloudgw.secretKey` | Secret key for the cloud storage | `""` |
+| `outputcloudgw.mountPath` | Output mount path to the cloud | `/output` |
+| `outputcloudgw.persistence.size` | Output cloud data persistence volume size | `10Gi` |
+| `outputcloudgw.s3gateway.enabled` | Output S3 Gateway type  | `false` |
+| `outputcloudgw.azuregateway.enabled` | Output Azure Gateway type  | `false` |
 | `qslexecutor.replicaCount` | Number of QSL executer replicas | `1` |
 | `qslexecutor.resources` | QSL executer resource limits | `{}` |
 | `qslexecutor.additionalAffinities` | Additional affinities to apply to QSL executer pods. | `{}` |
@@ -87,7 +94,6 @@ The following table lists the configurable parameters of the chart and their def
 | `qslexecutor.nodeSelector` | Node selector for the QSL executer pods | `{}` |
 | `qslexecutor.tolerations` | Tolerations for the QSL executer pods | `{}` |
 | `qslexecutor.service.type` | QSL executer service type | `ClusterIP` |
-| `qslexecutor.service.ssh.enabled` | Enable remote SSH access for QSL executer service | `true` |
 | `qslmanager.replicaCount` | Number of QSL manager replicas | `1` |
 | `qslmanager.resources` | QSL manager resource limits | `{}` |
 | `qslmanager.additionalAffinities` | Additional affinities to apply to QSL manager pods. | `{}` |
@@ -95,7 +101,6 @@ The following table lists the configurable parameters of the chart and their def
 | `qslmanager.nodeSelector` | Node selector for the QSL manager pods | `{}` |
 | `qslmanager.tolerations` | Tolerations for the QSL manager pods | `{}` |
 | `qslmanager.service.type` | QSL manager service type | `ClusterIP` |
-| `qslmanager.service.ssh.enabled` | Enable remote SSH access for QSL manager service | `true` |
 | `qslmanager.service.annotations` | QSL manager service annotations | `{}` |
 | `qslmanager.ingress.enabled` | Enable QSL manager Ingress | `false` |
 | `qslmanager.ingress.annotations` | QSL manager Ingress annotations | `{}` |
@@ -107,7 +112,6 @@ The following table lists the configurable parameters of the chart and their def
 | `qslworker.annotations` | QSL worker deployment annotations | `{}` |
 | `qslworker.nodeSelector` | Node selector for the QSL worker pods | `{}` |
 | `qslworker.tolerations` | Tolerations for the QSL worker pods | `{}` |
-| `qslworker.service.ssh.enabled` | Enable remote SSH access for QSL worker service | `true` |
 | `qslworker.updateStrategy` | Strategy for StatefulSet updates | `RollingUpdate` |
 | `qslworker.podManagementPolicy` | Pod Management strategy | `Parallel` |
 | `restapi.replicaCount` | Number of REST API replicas | `1` |
@@ -122,16 +126,16 @@ The following table lists the configurable parameters of the chart and their def
 | `restapi.tls.certificate` | REST API certificate for TLS | *See [values.yaml](values.yaml)* |
 | `restapi.tls.key` | REST API key for TLS | *See [values.yaml](values.yaml)* |
 | `sourcecloudgw.enabled` | Enable syncing source data from the cloud | `false` |
-| `sourcecloudgw.gateway` | Gateway type: "s3", "azure", "gcs" or empty "" for server mode (local data) | `s3` |
-| `sourcecloudgw.accessKey` | Access key for the cloud storage | `""` |
-| `sourcecloudgw.secretKey` | Secret key for the cloud storage | `""` |
+| `sourcecloudgw.mountPath` | Source mount path to the cloud | `/data` |
+| `sourcecloudgw.persistence.size` | Source cloud data persistence volume size | `10Gi` |
+| `sourcecloudgw.s3gateway.enabled` | Source S3 Gateway type  | `false` |
+| `sourcecloudgw.azuregateway.enabled` | Source Azure Gateway type  | `false` |
 | `symbolserver.replicaCount` | Number of symbol server replicas | `1` |
 | `symbolserver.resources` | Symbol server resource limits | `{}` |
 | `symbolserver.additionalAffinities` | Additional affinities to apply to symbol server pods. | `{}` |
 | `symbolserver.annotations` | Symbol server deployment annotations | `{}` |
 | `symbolserver.nodeSelector` | Node selector for the symbol server pods | `{}` |
 | `symbolserver.tolerations` | Tolerations for the symbol server pods | `{}` |
-| `symbolserver.service.ssh.enabled` | Enable remote SSH access for symbol server service | `true` |
 | `symbolserver.updateStrategy` | Strategy for StatefulSet updates | `RollingUpdate` |
 | `symbolserver.podManagementPolicy` | Pod Management strategy | `Parallel` |
 | `data.path` | Data volume mounth path | `/home/data` |
@@ -139,7 +143,7 @@ The following table lists the configurable parameters of the chart and their def
 | `data.persistence.folder` | When PVC is disabled, this is the local host path mounted as volume | `/tmp` |
 | `data.persistence.storageClass` | Storage class of backing persistent volume claim | `nil` |
 | `data.persistence.accessMode` | Persistence access mode | `ReadOnlyMany` |
-| `data.persistence.size` | Source data persistence volume size (same for cloud sync in server mode) | `10Gi` |
+| `data.persistence.size` | Source data persistence volume size | `10Gi` |
 | `data.persistence.mode` | Volume mode | `nil` |
 | `data.persistence.existingClaim` | If defined, PersistentVolumeClaim is not created and uses this claim | `nil` |
 | `data.persistence.volume.enabled` | Enable the creation of a static PersistentVolume | `false` |
@@ -151,21 +155,13 @@ The following table lists the configurable parameters of the chart and their def
 | `output.persistence.folder` | When PVC is disabled, this is the local host path mounted as volume | `/tmp` |
 | `output.persistence.storageClass` | Storage class of backing persistent volume claim | `nil` |
 | `output.persistence.accessMode` | Persistence access mode | `ReadWriteMany` |
-| `output.persistence.size` | Output persistence volume size (same for cloud sync in server mode) | `10Gi` |
+| `output.persistence.size` | Output persistence volume size | `10Gi` |
 | `output.persistence.mode` | Volume mode | `nil` |
 | `output.persistence.existingClaim` | If defined, PersistentVolumeClaim is not created and uses this claim | `nil` |
 | `output.persistence.volume.enabled` | Enable the creation of a static PersistentVolume | `false` |
 | `output.persistence.volume.reclaimPolicy` | PersistentVolume reclaim policy | `nil` |
 | `output.persistence.volume.mountOptions` | PersistentVolume mount options | `nil` |
 | `output.persistence.volume.plugin` | PersistentVolume type | `nil` |
-| `cache.enabled` | Enable the disk cache | `false` |
-| `cache.path` | Path where volumes are mounted to inside pods | `/home/cache` |
-| `cache.folder` | Path where cache data is stored on nodes | `/cache` |
-| `cache.resources` | Cache resource limits | `{}` |
-| `cache.annotations` | Annotations for cache daemonset | `{}` |
-| `cache.tolerations` | Tolerations for cache pods | `[]` |
-| `cache.service.type` | Cache service type | `ClusterIP` |
-| `cache.service.ssh.enabled` | Enable remote SSH access for cache service | `true` |
 | `nginx-ingress.enabled` | Enable nginx-ingress | `false` |
 | `google.credentials` | Google credentials JSON file | `""` |
 | `google.projectId` | Google project ID | `""` |
@@ -175,14 +171,6 @@ Alternatively, a YAML file that specifies the values for the parameters can be p
 
 ```console
 $ helm install --name my-release -f values.yaml .
-```
-
-> ⚠️ **Note:**
->
-> If you are using Google Cloud Storage for the `sourcecloudgw` and/or `outputcloudgw`, you need to pass your Google credentials file during `helm install`, for example:
-
-```console
-$ helm install --name my-release -f values.yaml --set-file google.credentials=/path/to/credentials.json.
 ```
 
 > **Tip**: You can use the default [values.yaml](values.yaml)

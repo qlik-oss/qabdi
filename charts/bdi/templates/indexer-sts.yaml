@@ -40,7 +40,6 @@ spec:
         - name: {{ template "bdi.indexer.fullname" . }}
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-{{- if .Values.autostartServices }}
           command: ["/home/ubuntu/dist/indexer/abdi_indexing_server"]
           args:
           - -s
@@ -50,26 +49,36 @@ spec:
           env:
           - name: KUBERNETES_MODE
             value: "true"
+          - name: LOGGING_SETTINGS_FILE
+            value: "/etc/config/logging/loggingsettings.json"
+          {{- if .Values.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}}
+          {{- if .Values.indexer }} {{- if .Values.indexer.pathToIndexingLoggingSettingsFile}}
+          - name: LOGGING_SETTINGS_FILE
+            value: {{ .Values.indexer.pathToIndexingLoggingSettingsFile | quote }}
+          {{- end}} {{- end}}
           - name: POD_NAME
             value: "{{ template "bdi.indexer.fullname" . }}"
-          - name: REGISTRY_URI
-            value: "{{ template "bdi.registry.fullname" . }}:55057"
-          {{- if hasKey .Values.indexer.config "serverThreads" }}
           - name: ASYNC_SERVER_THREADS
+          {{- if hasKey .Values.indexer.config "serverThreads" }}
             value: "{{ .Values.indexer.config.serverThreads | default 1  }}"
+          {{- else }}
+            value: "10"
           {{- end }}
           {{- if hasKey .Values.indexer.config "threadsPerConcurrentQueue" }}
           - name: THREADS_PER_CQ
             value: "{{ .Values.indexer.config.threadsPerConcurrentQueue | default 1  }}"
           {{- end }}
-{{- else }}
-          command: ['sh', '-c']
-          args:
-            - env > /etc/environment && /usr/sbin/sshd -D
-          env:
-{{- end }}
           - name: ACCEPT_QULA
             value: {{ .Values.acceptLicense | quote }}
+          - name: REGISTRY_URI
+            value: "{{ template "bdi.registry.fullname" . }}:55057"
+          - name: PERSISTENCE_URI
+            value: "{{ template "bdi.persistence.fullname" . }}:55010"
+          - name: INDEXING_MANAGER_URI
+            value: "{{ template "bdi.indexingmanager.fullname" . }}:55020"
           {{- if .Values.indexer.resources.requests }}
           {{- if .Values.indexer.resources.requests.cpu }}
           - name: INDEXING_VCPU_REQUEST
@@ -98,30 +107,13 @@ spec:
             value: {{ .Values.indexer.resources.limits.memory | default "" | quote }}
           {{- end }}
           {{- end }}
-          {{- if .Values.sourcecloudgw.enabled }}
-          - name: SOURCE_GW_KEY
-            value: {{ .Values.sourcecloudgw.accessKey | quote }}
-          - name: SOURCE_GW_SECRET
-            value: {{ .Values.sourcecloudgw.secretKey | quote }}
-          {{- end }}
-          {{- if .Values.outputcloudgw.enabled }}
-          - name: OUTPUT_GW_KEY
-            value: {{ .Values.outputcloudgw.accessKey | quote }}
-          - name: OUTPUT_GW_SECRET
-            value: {{ .Values.outputcloudgw.secretKey | quote }}
-          {{- end }}
+          {{- include "bdi.cloudSync.exportSettings" . | indent 10 }}
           - name: ENABLE_CRASH_DUMP
             value: {{ .Values.enableCrashDumpUpload | quote }}
           ports:
             - name: indexer
               containerPort: 55040
               protocol: TCP
-            {{- if not (.Values.autostartServices) }}
-            {{- if .Values.indexer.service.ssh.enabled }}
-            - name: ssh
-              containerPort: 22
-              protocol: TCP
-            {{- end }}{{- end }}
           securityContext:
             privileged: {{ .Values.image.privileged }}
             {{- if .Values.enableCrashDumpUpload }}
@@ -129,13 +121,11 @@ spec:
               add:
                 - SYS_PTRACE
             {{- end }}
-          {{- if .Values.autostartServices }}
           readinessProbe:
             exec:
               command: ["/bin/grpc_health_probe", "-addr=:55040", "-service=readiness"]
             initialDelaySeconds: 3
             periodSeconds: 5
-          {{- end }}
           resources:
 {{ toYaml .Values.indexer.resources | indent 12 }}
           volumeMounts:
@@ -143,14 +133,8 @@ spec:
               name: data-pv
             - mountPath: {{ .Values.output.path }}
               name: output-pv
-            {{- if .Values.cache.enabled }}
-            - mountPath: {{ .Values.cache.path }}
-              name: cache-pv
-            {{- end }}
-            {{- if .Values.autostartServices }}
             - name: logging-volume
               mountPath: /etc/config/logging
-            {{- end }}
       volumes:
         {{- if .Values.data.persistence.enabled }}
         - name: data-pv
@@ -170,16 +154,9 @@ spec:
           hostPath:
             path: {{ .Values.output.persistence.folder }}
         {{- end }}
-        {{- if .Values.cache.enabled }}
-        - name: cache-pv
-          hostPath:
-            path: {{ .Values.cache.folder }}
-        {{- end }}
-        {{- if .Values.autostartServices }}
         - name: logging-volume
           configMap:
             name: {{ template "bdi.indexer.logging.fullname" . }}
-        {{- end }}
   updateStrategy:
     type: {{ .Values.indexer.updateStrategy }}
   podManagementPolicy: {{ .Values.indexer.podManagementPolicy }}

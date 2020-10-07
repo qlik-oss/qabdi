@@ -19,7 +19,6 @@ spec:
         app: {{ template "bdi.restapi.fullname" . }}
         release: {{ .Release.Name }}
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/cluster-cm.yaml") . | sha256sum }}
       {{- if .Values.restapi.annotations }}
 {{ toYaml .Values.restapi.annotations | indent 8 }}
       {{- end }}
@@ -44,13 +43,6 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/home/ubuntu/dist/rest_service/abdi_rest_service"]
           args: [
-{{- if not (.Values.autostartServices) }}
-            "-a", "0.0.0.0",
-            "-p", "8080",
-            "-r", "/home/ubuntu/dist",
-            "-c", "/config/cluster/cluster.json",
-            "-s", "/config/indexing/indexing_setting.json",
-{{- end }}
             {{- if .Values.restapi.tls.enabled }}
             "--cert_file", "/home/ubuntu/tls/tls.cert",
             "--key_file", "/home/ubuntu/tls/tls.key",
@@ -64,17 +56,8 @@ spec:
               value: {{ .Chart.Version | quote }}
             - name: BDI_PRODUCT_VERSION
               value: {{ .Chart.AppVersion | quote }}
-            {{- if .Values.sourcecloudgw.enabled }}
-            - name: SOURCE_GW_KEY
-              value: {{ .Values.sourcecloudgw.accessKey | quote }}
-            - name: SOURCE_GW_SECRET
-              value: {{ .Values.sourcecloudgw.secretKey | quote }}
-            {{- end }}
+            {{- include "bdi.cloudSync.exportSettings" . | indent 12 }}
             {{- if .Values.outputcloudgw.enabled }}
-            - name: OUTPUT_GW_KEY
-              value: {{ .Values.outputcloudgw.accessKey | quote }}
-            - name: OUTPUT_GW_SECRET
-              value: {{ .Values.outputcloudgw.secretKey | quote }}
             - name: BDI_OUTPUT_CLOUD_SYNC_ENABLED
               value: "true"
             {{- end }}
@@ -84,11 +67,14 @@ spec:
             {{- end }}
             - name: ENABLE_CRASH_DUMP
               value: {{ .Values.enableCrashDumpUpload | quote }}
-{{- if .Values.autostartServices }}
             - name: KUBERNETES_MODE
               value: "true"
             - name: REGISTRY_URI
               value: "{{ template "bdi.registry.fullname" . }}:55057"
+            - name: PERSISTENCE_URI
+              value: "{{ template "bdi.persistence.fullname" . }}:55010"
+            - name: INDEXING_MANAGER_URI
+              value: "{{ template "bdi.indexingmanager.fullname" . }}:55020"
             - name: OUTPUT_ROOT_PATH
               value: "{{ .Values.output.path }}"
             - name: SOURCEDATA_PATH
@@ -97,7 +83,14 @@ spec:
               value: ""
             - name: DATASET_NAME
               value: "{{ .Values.data.name }}"
-{{- end }}
+            {{- if hasKey .Values.symbolserver.config "serverThreads" }}
+            - name: SYMBOL_SERVER_THREADS
+              value: "{{ .Values.symbolserver.config.serverThreads | default 1  }}"
+            {{- end }}
+            {{- if hasKey .Values.indexer.config "serverThreads" }}
+            - name: INDEXER_COLUMN_INDEX_THREADS
+              value: "{{ .Values.indexer.config.serverThreads | default 1  }}"
+            {{- end }}
           ports:
             - name: http
               containerPort: 8080
@@ -112,20 +105,10 @@ spec:
           resources:
 {{ toYaml .Values.restapi.resources | indent 12 }}
           volumeMounts:
-{{- if not (.Values.autostartServices) }}
-            - mountPath: /config/cluster
-              name: cluster-cm
-            - mountPath: /config/indexing
-              name: settings
-{{- end }}
             - mountPath: {{ .Values.data.path }}
               name: data-pv
             - mountPath: {{ .Values.output.path }}
               name: output-pv
-            {{- if .Values.cache.enabled }}
-            - mountPath: {{ .Values.cache.path }}
-              name: cache-pv
-            {{- end }}
             {{- if .Values.restapi.tls.enabled }}
             - mountPath: /home/ubuntu/tls
               name: tls
@@ -135,49 +118,10 @@ spec:
             httpGet:
               path: /health
               port: http
-{{- if not (.Values.autostartServices) }}
-      initContainers:
-        - name: init
-          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ['sh', '-c']
-          args:
-            - |
-              settings="/config/indexing/indexing_setting.json";
-              if [ ! -f $settings ]; then
-                cp /home/ubuntu/dist/runtime/config/indexing_setting.json /config/indexing/
-              fi
-
-              $data = $(jq '.source_data_path' $settings)
-              if [ -z $data ]; then
-                tmp=$(mktemp)
-                jq '.source_data_path = "{{ .Values.data.path }}"' $settings > "$tmp" && mv "$tmp" "$settings"
-              fi
-
-              $output = $(jq '.output_root_folder' $settings)
-              if [ -z $output ]; then
-                tmp=$(mktemp)
-                jq '.output_root_folder = "{{ .Values.output.path }}"' $settings > "$tmp" && mv "$tmp" "$settings"
-              fi
-
-              $cache = $(jq '.qsl_worker_indexlet_cache_path' $settings)
-              if [ -z $cache ]; then
-                tmp=$(mktemp)
-                jq '.qsl_worker_indexlet_cache_path = "/home/cache/indexlet"' $settings > "$tmp" && mv "$tmp" "$settings"
-              fi
-          volumeMounts:
-            - mountPath: /config/indexing
-              name: settings
-{{- end }}
+            initialDelaySeconds: 5
+            periodSeconds: 30
+            timeoutSeconds: 30
       volumes:
-{{- if not (.Values.autostartServices) }}
-        - name: cluster-cm
-          configMap:
-            name: {{ template "bdi.cluster.fullname" . }}
-        - name: settings
-          hostPath:
-            path: /tmp/bdi
-{{- end }}
         {{- if .Values.data.persistence.enabled }}
         - name: data-pv
           persistentVolumeClaim:
@@ -195,11 +139,6 @@ spec:
         - name: output-pv
           hostPath:
             path: {{ .Values.output.persistence.folder }}
-        {{- end }}
-        {{- if .Values.cache.enabled }}
-        - name: cache-pv
-          hostPath:
-            path: {{ .Values.cache.folder }}
         {{- end }}
         {{- if .Values.restapi.tls.enabled }}
         - name: tls

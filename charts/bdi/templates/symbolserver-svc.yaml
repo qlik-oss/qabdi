@@ -15,14 +15,6 @@ spec:
       targetPort: symbol
       protocol: TCP
       name: symbol
-    {{- if not (.Values.autostartServices) }}
-    {{- if .Values.symbolserver.service.ssh.enabled }}
-    - port: 22
-      targetPort: ssh
-      protocol: TCP
-      name: ssh
-    {{- end }}
-    {{- end }}
   selector:
     app: {{ template "bdi.symbolserver.fullname" . }}
     release: {{ .Release.Name }}
