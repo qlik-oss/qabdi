@@ -10,7 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
-      - uses: J12934/helm-gh-pages-action@master
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.0.0
         with:
           charts-folder: charts
           access-token: ${{ secrets.ACCESS_TOKEN }}
