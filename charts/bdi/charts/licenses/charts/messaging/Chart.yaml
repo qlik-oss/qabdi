@@ -1,0 +1,17 @@
+apiVersion: v1
+description: |
+  Messaging system services. NATS and NATS Streaming are supported. Other services can communicate with each other and orchestrate their works using the services provided by this chart.
+home: https://www.qlik.com
+keywords:
+- messaging
+- queue
+- nats
+- nats-streaming
+name: messaging
+sources:
+- https://github.com/nats-io/gnatsd
+- https://github.com/nats-io/nats-streaming-server
+- https://github.com/helm/charts/tree/master/stable/nats
+- https://github.com/nats-io/prometheus-nats-exporter
+- https://github.com/qlik-trial/nats-prom-exporter
+version: 3.0.8

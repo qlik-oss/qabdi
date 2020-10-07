@@ -1,0 +1,120 @@
+{{- define "common.deployment.tpl" -}}
+{{- $root := . -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- $releaseName := .Release.Name -}}
+apiVersion: apps/v1
+kind: Deployment
+{{ template "common.metadata.workload" . }}
+spec:
+{{- if .Values.deployment.replicas}}
+  replicas: {{ .Values.deployment.replicas }}
+{{- end}}
+  template:
+    metadata:
+      annotations:
+        checksum/configs: {{ (print (include "common.configmap.tpl" .)) | sha256sum }}
+        checksum/secrets: {{ (print (include "common.secret.tpl" .)) | sha256sum }}
+{{- if .Values.deployment }}{{- if .Values.deployment.annotations }}
+{{ include "common.annote" (dict "annotations" .Values.deployment.annotations "root" . ) | indent 8 }}
+{{- end }}{{- end }}
+      labels:
+        app: {{ template "common.name" . }}
+        release: {{ .Release.Name | quote }}
+{{- if .Values.deployment }}{{- if .Values.deployment.labels }}
+{{ include "common.labelize" .Values.deployment.labels | indent 8 }}
+{{- end }}{{- end }}
+{{- if .Values.configs }}{{- if .Values.configs.data }}{{- if .Values.configs.data.natsUri }}
+        {{ tpl .Values.configs.data.natsUri . | regexFind "//.*:" | trimAll ":" | trimAll "/" }}: "true"
+{{- end }}{{- end }}{{- end }}
+    spec:
+{{- if ne (.Values.rbacEnabled | default false) false  }}
+      serviceAccountName: {{ template "common.fullname" . }}
+{{- end }}
+{{- if .Values.image }}{{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.image.pullSecrets | indent 8 }}
+{{- end }}{{- end }}
+      volumes:
+{{- if or (contains $name $releaseName) (eq $releaseName "messaging") }}
+      -
+{{ include "common.volume.secret" (list (print (include "common.fullname" .) "-secrets") (include "common.fullname" .)) | indent 8 }}
+{{- else }}
+      -
+{{ include "common.volume.secret" (list (print (include "common.fullname" .) "-secrets") (include "common.fullname" .)) | indent 8 }}
+      -
+{{ include "common.volume.secret" (list (printf "%s-secrets" (.Release.Name)) (printf "%s" (.Release.Name))) | indent 8 }}
+{{- end }}
+
+{{- range $type, $volumes:= .Values.deployment.volumes }}
+{{- if contains "persistentVolumeClaim" $type -}}
+{{- range $name, $volume:= $volumes }}
+{{- if and (eq $name "default") ($volume.mount) }}
+      -
+{{ include "common.volume.pvc" (list (include "common.fullname" $root) (include "common.fullname" $root) ($volume.existingClaim | default "")) | indent 8 }}
+{{- else if ($volume.mount)  }}
+      -
+{{ include "common.volume.pvc" (list (printf "%s-%s" (include "common.fullname" $root) $name) (printf "%s-%s" (include "common.fullname" $root) $name) ($volume.existingClaim | default "")) | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if contains "emptyDir" $type -}}
+{{- range $name, $volume:= $volumes }}
+{{- if $volume.mount }}
+      -
+{{ include "common.volume.emptydir" (list (printf "%s-%s" (include "common.fullname" $root) $name) (printf "%s-%s" (include "common.fullname" $root) $name)) | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if contains "hostPath" $type -}}
+{{- range $name, $volume:= $volumes }}
+      -
+{{ include "common.volume.hostpath" (list (printf "%s-%s" (include "common.fullname" $root) $name) $volume) | indent 8 }}
+{{- end }}
+{{- end }}
+
+{{- if contains "configMap" $type -}}
+{{- range $name, $volume:= $volumes }}
+      -
+{{ include "common.volume.configmap" (list (printf "%s-%s" (include "common.fullname" $root) $name) $volume) | indent 8 }}
+{{- end }}
+{{- end }}
+
+{{- if contains "secret" $type -}}
+{{- range $name, $volume:= $volumes }}
+      -
+{{ include "common.volume.secret" (list (printf "%s-%s" (include "common.fullname" $root) $name) $volume) | indent 8 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{ include "common.ca-certificates.volume" . | nindent 6 }}
+{{- if .Values.configs }}{{- if .Values.configs.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.configs.terminationGracePeriodSeconds }}
+{{- end }}{{- end }}
+{{- if .Values.deployment }}{{- if or .Values.deployment.initContainer .Values.migration }}
+      initContainers:
+{{- if .Values.migration }}
+{{- $root := set (set . "container" .Values.migration).container "name" "migration" }}
+      -
+{{ include "common.initContainer.tpl" . | indent 8 }}
+{{- end }}
+{{- if .Values.deployment.initContainer }}
+      -
+{{ include "common.initContainer.tpl" (set . "container" .Values.deployment.initContainer ) | indent 8 }}
+{{- end }}
+{{- end }}{{- end }}
+      containers:
+      -
+{{ include "common.container.tpl" (set . "container" .Values.deployment.container ) | indent 8 }}
+  selector:
+    matchLabels:
+      app: {{ template "common.name" . }}
+      release: {{ .Release.Name }}
+{{- end -}}
+{{- define "common.deployment" -}}
+{{- $top := first . -}}
+{{- if and $top.Values.deployment }}
+{{- template "common.util.merge" (append . "common.deployment.tpl") -}}
+{{- end -}}
+{{- end -}}

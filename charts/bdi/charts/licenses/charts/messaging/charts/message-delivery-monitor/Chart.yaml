@@ -1,0 +1,9 @@
+apiVersion: v1
+appVersion: 0.1.2
+description: |
+  Service that monitors NATS/NATS-Streaming message delivery metrics
+home: https://www.qlik.com
+name: message-delivery-monitor
+sources:
+- https://github.com/qlik-trial/message-delivery-monitor
+version: 1.0.0

@@ -1,0 +1,8 @@
+apiVersion: v1
+description: Qlik resource contract chartbuilding components and helpers
+home: https://github.com/qlik-trial/resource-contract
+maintainers:
+- email: boris.kuschel@qlik.com
+  name: bkuschel
+name: qlikcommon
+version: 2.1.5

@@ -1,0 +1,19 @@
+{{- define "common.rolebinding.tpl" -}}
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: RoleBinding
+{{ template "common.metadata" . }}
+roleRef:
+ kind: Role
+ name: {{ template "common.fullname" . }}
+ apiGroup: rbac.authorization.k8s.io
+subjects:
+- kind: ServiceAccount
+  name: {{ template "common.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+{{- end -}}
+{{- define "common.rolebinding" -}}
+{{- $top := first . -}}
+{{- if ne ($top.Values.rbacEnabled | default false) false -}}
+{{- template "common.util.merge" (append . "common.rolebinding.tpl") -}}
+{{- end -}}
+{{- end -}}

@@ -1,5 +1,13 @@
 dependencies:
+  - name: qlikcommon
+    version: "2.1.5"
+    repository: "@qlik"
+    condition: global.component-common-imports
   - name: mongodb
     version: 4.5.0
     repository: "@stable"
-    condition: mongodb.enabled
+    condition: global.component-common-imports,mongodb.enabled
+  - name: messaging
+    version: 3.0.8
+    repository: "@qlik"
+    condition: global.component-common-imports,messaging.enabled

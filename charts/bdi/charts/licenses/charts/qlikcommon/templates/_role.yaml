@@ -1,0 +1,23 @@
+{{- define "common.role.tpl" -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+{{ template "common.metadata" . }}
+rules:
+{{- if .Values.podSecurityPolicy | default false }}
+- apiGroups:
+  - policy
+  resourceNames:
+  - {{ template "common.fullname" . }}
+  resources:
+  - podsecuritypolicies
+  verbs:
+  - use
+{{- end }}
+{{- end -}}
+{{- define "common.role" -}}
+{{- $top := first . -}}
+{{- if ne ($top.Values.rbacEnabled | default false) false -}}
+{{- template "common.util.merge" (append . "common.role.tpl") -}}
+{{- end -}}
+{{- end -}}
+

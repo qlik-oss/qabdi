@@ -1,0 +1,73 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ template "message-delivery-monitor.fullname" . }}
+  labels:
+    app: {{ template "message-delivery-monitor.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "message-delivery-monitor.name" . }}
+        release: {{ .Release.Name }}
+        {{- range $key, $val := .Values.podLabels }}
+        {{- if tpl ($val) $}}
+        {{ tpl ($key) $ }}: {{ tpl ($val) $ | quote }}
+        {{- end }}
+        {{- end}}
+    spec:
+      containers:
+        - name: {{ template "message-delivery-monitor.name" . }}
+          image: {{ template "message-delivery-monitor.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.resources }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            {{- if .Values.nats.auth.enabled }}
+            - name: NATS_USER
+              {{- if .Values.nats.auth.secretName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl (.Values.nats.auth.secretName) . }}
+                  key: {{ .Values.nats.auth.secretClientUser }}
+              {{- else }}
+              value: {{ .Values.nats.auth.user }}
+              {{- end }}
+            - name: NATS_PASSWORD
+              {{- if .Values.nats.auth.secretName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ tpl (.Values.nats.auth.secretName) . }}
+                  key: {{ .Values.nats.auth.secretClientPassword }}
+              {{- else }}
+              value: {{ .Values.nats.auth.password }}
+              {{- end }}
+            {{- end }}
+            - name: LOG_LEVEL
+              value: {{ .Values.logLevel | quote }}
+            - name: NATS_ADDR
+              value: {{ tpl (.Values.nats.server) . | quote }}
+            - name: NATS_STREAMING_CLUSTER_ID
+              value: {{ tpl (.Values.stan.clusterID) . | quote }}
+            - name: NATS_STREAMING_MONITORING_ENDPOINT
+              value: {{ .Values.stan.monitor_channel | quote }}
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: {{ .Values.service.port }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+{{ toYaml .Values.imagePullSecrets | indent 8 }}
+      {{- end }}
+  selector:
+    matchLabels:
+      app: {{ template "message-delivery-monitor.name" . }}
+      release: {{ .Release.Name }}

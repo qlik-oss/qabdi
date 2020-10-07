@@ -1,0 +1,12 @@
+dependencies:
+- name: message-delivery-monitor
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 1.0.0
+- name: nats
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 1.0.17
+- name: nats-streaming
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 1.0.2
+digest: sha256:27943739bb5306b4cf813ec998c88301173bdd9d9fdb3b25f99239bd76adc5b2
+generated: "2020-06-22T22:17:33.009111-04:00"

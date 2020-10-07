@@ -1,0 +1,16 @@
+dependencies:
+  - name: message-delivery-monitor
+    version: 1.0.0
+    repository: "@qlik"
+    # message-delivery-monitor.monitor.enabled is used by services that depend on the messaging chart to enable or disable nats
+    condition: message-delivery-monitor.enabled
+  - name: nats
+    version: 1.0.17
+    repository: "@qlik"
+    # messaging.nats.enabled is used by services that depend on the messaging chart to enable or disable nats
+    condition: nats.enabled
+  - name: nats-streaming
+    version: 1.0.2
+    repository: "@qlik"
+    # messaging.nats-streaming.enabled is used by services that depend on the messaging chart to enable or disable nats streaming
+    condition: nats-streaming.enabled

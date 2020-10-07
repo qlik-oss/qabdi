@@ -25,10 +25,16 @@ acceptLicense: false
 
 ## licenses contains the configurations for the licenses sub-chart
 licenses:
-  abdi: true
-  replicaCount: 1
-  license:
-    key: ""
+  configs:
+    natsEnabled: false
+    tokenAuthEnabled: false
+    policyDecisionsEnabled: false
+    abdiMode: true
+  secrets:
+    stringData:
+      licenseKey: ""
+  deployment:
+    replicas: 1
   mongodb:
     enabled: false
 

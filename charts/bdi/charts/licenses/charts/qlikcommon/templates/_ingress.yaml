@@ -1,0 +1,49 @@
+{{- define "common.ingress.tpl" -}}
+apiVersion: extensions/v1beta1
+kind: Ingress
+{{ template "common.metadata" . }}
+  annotations:
+    kubernetes.io/ingress.class: {{ template "common.ingress.class" . }}
+  {{- if .Values.configs }}{{- if .Values.configs.data }}{{- if .Values.configs.data.ingressAuthUrl }}
+    nginx.ingress.kubernetes.io/auth-url: {{ tpl .Values.configs.data.ingressAuthUrl .  | quote }}
+  {{- end }}{{- end }}{{- end }}
+  {{- if .Values.ingress}}{{- if .Values.ingress.annotations }}
+    {{ include "common.annote" (dict "annotations" .Values.ingress.annotations "root" . ) | indent 4 }}
+  {{- end }}{{- end }}
+spec:
+  {{- if .Values.ingress }}
+  rules:
+  {{- range $host := .Values.ingress.hosts }}
+  - host: {{ $host }}
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: {{ template "common.fullname" $ }}
+          servicePort: 80
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+{{ toYaml .Values.ingress.tls | indent 4 }}
+  {{- end -}}
+{{- end -}}
+  {{- end }}
+{{- define "common.ingress" -}}
+{{- $top := first . -}}
+{{- if and $top.Values.ingress }}
+{{- template "common.util.merge" (append . "common.ingress.tpl") -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "common.ingress.class" -}}
+  {{- $ingressClass := "nginx" }}
+  {{- if .Values.ingress }}{{- if .Values.ingress.class }}
+  {{- $ingressClass = .Values.ingress.class -}}
+  {{- end -}}{{- end -}}
+  {{- if .Values.global -}}
+    {{- if .Values.global.ingressClass -}}
+      {{- $ingressClass = .Values.global.ingressClass -}}
+    {{- end -}}
+  {{- end -}}
+  {{- printf "%s" $ingressClass -}}
+{{- end -}}

@@ -1,0 +1,21 @@
+## Messaging Delivery Monitor chart configuration
+##
+message-delivery-monitor:
+  enabled: false
+  nats:
+    auth:
+      enabled: true
+
+## NATS chart configuration
+##
+nats:
+  enabled: true
+  auth:
+    enabled: true
+
+## NATS Streaming chart configuration
+##
+nats-streaming:
+  enabled: true
+  auth:
+    enabled: true

@@ -1,0 +1,32 @@
+{{- define "common.configmap.tpl" -}}
+apiVersion: v1
+kind: ConfigMap
+{{ template "common.metadata.configs" . }}
+data:
+  {{- $root := . -}}
+  {{- if .Values.deployment -}}
+  {{- range $name, $container:= .Values.deployment }}
+  {{- if kindIs "map" $container }}{{- if $container.configs }}
+  {{- range $key, $value := $container.configs.data }}
+  {{- if kindIs "string" $value }}
+  {{ $key }}: {{ tpl ( $value ) $root | quote }}
+  {{- else }}
+  {{ $key }}: {{ $value }}
+  {{- end }}
+  {{- end }}
+  {{- end }}{{- end }}
+  {{- end }}
+  {{- end }}
+  {{- if .Values.configs -}}
+  {{- range $key, $value := .Values.configs.data }}
+  {{- if kindIs "string" $value }}
+  {{ $key }}: {{ tpl ( $value ) $root | quote }}
+  {{- else }}
+  {{ $key }}: {{ $value | quote }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
+{{- end -}}
+{{- define "common.configmap" -}}
+{{- template "common.util.merge" (append . "common.configmap.tpl") -}}
+{{- end -}}

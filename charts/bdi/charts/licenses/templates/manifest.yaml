@@ -1,0 +1,89 @@
+{{- template "common.configmap" (list . "licenses.configmap") -}}
+{{- define "licenses.configmap" -}}
+{{- end }}
+
+---
+{{ template "common.secret" (list . "licenses.secret") -}}
+{{- define "licenses.secret" -}}
+{{- end }}
+
+---
+{{ template "common.ingress" (list . "licenses.ingress") -}}
+{{- define "licenses.ingress" -}}
+spec:
+  rules:
+    - http:
+        paths:
+          - backend:
+              serviceName: {{ template "common.fullname" . }}
+              servicePort: {{ .Values.service.port }}
+            path: /api/v1/licenses
+{{- end }}
+
+---
+{{ template "common.service" (list . "licenses.service") -}}
+{{- define "licenses.service" -}}
+{{- end }}
+
+---
+{{ template "common.deployment" (list . "licenses.deployment") -}}
+{{- define "licenses.deployment" -}}
+spec:
+  template:
+    spec:
+      containers:
+        -
+{{ include "common.container" (list (set . "container" .Values.deployment.container) "licenses.deployment.main") | indent 8}}
+        -
+{{ include "common.container" (list (set . "container" .Values.deployment.election) "licenses.deployment.election") | indent 8}}
+{{- end }}
+
+{{- define "licenses.deployment.election" -}}
+name: election
+ports:
+  - containerPort: {{ .Values.deployment.election.configs.port }}
+args:
+  - --election={{ template "common.fullname" . }}
+  - --election-namespace={{ .Release.Namespace }}
+  - --http=0.0.0.0:4040
+livenessProbe:
+  httpGet:
+    path: /health
+    port: {{ .Values.deployment.election.configs.port }}
+readinessProbe: nil
+{{- end }}
+
+{{- define "licenses.deployment.main" -}}
+{{- end }}
+
+---
+{{ template "common.serviceaccount" (list . "licenses.serviceaccount" ) -}}
+{{- define "licenses.serviceaccount" -}}
+{{- end }}
+
+---
+{{ template "common.role" (list . "licenses.role") -}}
+{{- define "licenses.role" -}}
+rules:
+  # Required for leader election
+  - apiGroups:
+      - ""
+    resources:
+      - endpoints
+    verbs:
+      - "get"
+      - "update"
+{{- end }}
+
+---
+{{ template "common.rolebinding" (list . "licenses.rolebinding") -}}
+{{- define "licenses.rolebinding" -}}
+{{- end }}
+
+---
+{{ template "common.hpa" (list . "licenses.hpa") -}}
+{{- define "licenses.hpa" -}}
+{{- end }}
+
+---
+

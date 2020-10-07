@@ -1,24 +1,24 @@
+{{- if .Values.metrics.prometheus.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "licenses.fullname" . }}
+  name: {{ template "message-delivery-monitor.fullname" . }}
   labels:
-    app: {{ template "licenses.name" . }}
+    app: {{ template "message-delivery-monitor.name" . }}
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
   annotations:
-{{- if .Values.metrics.prometheus.enabled }}
     prometheus.io/scrape: "true"
     prometheus.io/port: {{ default .Values.service.port .Values.metrics.prometheus.port | quote }}
-{{- end }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.port }}
       protocol: TCP
-      name: {{ template "licenses.name" . }}
+      name: {{ template "message-delivery-monitor.name" . }}
   selector:
-    app: {{ template "licenses.name" . }}
+    app: {{ template "message-delivery-monitor.name" . }}
     release: {{ .Release.Name }}
+{{- end }}

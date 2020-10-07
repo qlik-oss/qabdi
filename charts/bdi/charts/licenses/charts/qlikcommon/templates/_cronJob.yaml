@@ -1,0 +1,115 @@
+{{- define "common.cronJob.tpl" -}}
+{{- $root := . -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- $releaseName := .Release.Name -}}
+apiVersion: batch/v1beta1
+kind: CronJob
+{{ template "common.metadata.workload" . }}
+spec:
+  schedule: "{{ .Values.cronJob.schedule }}"
+  {{- if .Values.cronJob.concurrencyPolicy }}
+  concurrencyPolicy: {{ .Values.cronJob.concurrencyPolicy }}
+  {{- end }}
+  {{- if .Values.cronJob.successfulJobsHistoryLimit }}
+  successfulJobsHistoryLimit: {{ .Values.cronJob.successfulJobsHistoryLimit }}
+  {{- end }}
+  {{- if .Values.cronJob.failedJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ .Values.cronJob.failedJobsHistoryLimit }}
+  {{- end }}
+  {{- if .Values.cronJob.startingDeadlineSeconds }}
+  startingDeadlineSeconds: {{ .Values.cronJob.startingDeadlineSeconds }}
+  {{- end }}
+  jobTemplate:
+    spec:
+      {{- if .Values.cronJob.parallelism }}
+      parallelism: {{ .Values.cronJob.parallelism }}
+      {{- end }}
+      {{- if .Values.cronJob.backoffLimit }}
+      backoffLimit: {{ .Values.cronJob.backoffLimit }}
+      {{- end }}
+      template:
+        metadata:
+          annotations:
+            checksum/configs: {{ (print (include "common.configmap.tpl" .)) | sha256sum }}
+            checksum/secrets: {{ (print (include "common.secret.tpl" .)) | sha256sum }}
+{{- if .Values.cronJob }}{{- if .Values.cronJob.annotations }}
+{{ include "common.annote" (dict "annotations" .Values.cronJob.annotations "root" . ) | indent 14 }}
+{{- end }}{{- end }}
+          labels:
+            app: {{ template "common.name" . }}
+            release: {{ .Release.Name | quote }}
+{{- if .Values.cronJob }}{{- if .Values.cronJob.labels }}
+{{ include "common.labelize" .Values.cronJob.labels | indent 14 }}
+{{- end }}{{- end }}
+        spec:
+{{- if .Values.image.pullSecrets }}
+          imagePullSecrets:
+{{ toYaml .Values.image.pullSecrets | indent 12 }}
+{{- end }}
+          volumes:
+{{- if or (contains $name $releaseName) (eq $releaseName "messaging") }}
+          -
+{{ include "common.volume.secret" (list (print (include "common.fullname" .) "-secrets") (include "common.fullname" .)) | indent 12 }}
+{{- else }}
+          -
+{{ include "common.volume.secret" (list (print (include "common.fullname" .) "-secrets") (include "common.fullname" .)) | indent 12 }}
+          -
+{{ include "common.volume.secret" (list (printf "%s-secrets" (.Release.Name)) (printf "%s" (.Release.Name))) | indent 12 }}
+{{- end }}
+
+{{- range $type, $volumes:= .Values.cronJob.volumes }}
+{{- if contains "persistentVolumeClaim" $type -}}
+{{- range $name, $volume:= $volumes }}
+{{- if and (eq $name "default") ($volume.mount) }}
+          -
+{{ include "common.volume.pvc" (list (include "common.fullname" $root) (include "common.fullname" $root) ($volume.existingClaim | default "")) | indent 12 }}
+{{- else if ($volume.mount)  }}
+          -
+{{ include "common.volume.pvc" (list (printf "%s-%s" (include "common.fullname" $root) $name) (printf "%s-%s" (include "common.fullname" $root) $name) ($volume.existingClaim | default "")) | indent 12 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if contains "emptyDir" $type -}}
+{{- range $name, $volume:= $volumes }}
+{{- if $volume.mount }}
+          -
+{{ include "common.volume.emptydir" (list (printf "%s-%s" (include "common.fullname" $root) $name) (printf "%s-%s" (include "common.fullname" $root) $name)) | indent 12 }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+{{- if contains "hostPath" $type -}}
+{{- range $name, $volume:= $volumes }}
+          -
+{{ include "common.volume.hostpath" (list (printf "%s-%s" (include "common.fullname" $root) $name) $volume) | indent 12 }}
+{{- end }}
+{{- end }}
+
+{{- if contains "configMap" $type -}}
+{{- range $name, $volume:= $volumes }}
+          -
+{{ include "common.volume.configmap" (list (printf "%s-%s" (include "common.fullname" $root) $name) $volume) | indent 12 }}
+{{- end }}
+{{- end }}
+
+{{- if contains "secret" $type -}}
+{{- range $name, $volume:= $volumes }}
+          -
+{{ include "common.volume.secret" (list (printf "%s-%s" (include "common.fullname" $root) $name) $volume) | indent 12 }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{ include "common.ca-certificates.volume" . | nindent 10 }}
+          restartPolicy: {{ .Values.cronJob.restartPolicy }}
+          containers:
+          -
+{{ include "common.container.tpl" (set . "container" .Values.cronJob.container ) | indent 12 }}
+{{- end }}
+
+{{- define "common.cronJob" -}}
+{{- $top := first . -}}
+{{- if and $top.Values.cronJob }}
+{{- template "common.util.merge" (append . "common.cronJob.tpl") -}}
+{{- end -}}
+{{- end -}}

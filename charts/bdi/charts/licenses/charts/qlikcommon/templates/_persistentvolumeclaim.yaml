@@ -1,0 +1,47 @@
+{{- define "common.persistentvolumeclaim.tpl" -}}
+{{- $persistence := default .Values.persistence .claim -}}
+apiVersion: v1
+kind: PersistentVolumeClaim
+{{ template "common.metadata" . }}
+spec:
+  accessModes:
+    - {{ $persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ $persistence.size | quote }}
+{{- if $persistence.matchLabels }}
+  selector:
+    matchLabels:
+{{- include "common.labelize" $persistence.matchLabels | indent 6 -}}
+{{- end -}}
+{{- if $persistence.storageClass }}
+{{- if (eq "-" $persistence.storageClass) }}
+  storageClassName: ""
+{{- else }}
+  storageClassName: "{{ $persistence.storageClass }}"
+{{- end }}
+{{- else -}}
+  {{- if .Values.global }}
+    {{- if .Values.global.persistence }}
+      {{- if .Values.global.persistence.storageClass }}
+        {{- if (eq "-" .Values.global.persistence.storageClass) }}
+  storageClassName: ""
+        {{- else }}
+  storageClassName: {{ .Values.global.persistence.storageClass }}
+        {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- define "common.persistentvolumeclaim" -}}
+{{- $top := first . -}}
+{{- if $top.Values.persistence -}}{{- if $top.Values.persistence.enabled -}}{{- if $top.Values.persistence.persistentVolumeClaim -}}
+  {{- if not $top.claim -}}
+    {{- $top = set $top "claim" $top.Values.persistence.persistentVolumeClaim.default -}}
+    {{- template "common.util.merge" (append . "common.persistentvolumeclaim.tpl") -}}
+  {{- else -}}
+    {{- template "common.util.merge" (append . "common.persistentvolumeclaim.tpl") -}}
+  {{- end -}}
+{{- end -}}{{- end -}}{{- end -}}
+{{- end -}}

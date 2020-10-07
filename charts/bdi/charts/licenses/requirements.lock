@@ -1,6 +1,12 @@
 dependencies:
+- name: qlikcommon
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 2.1.5
 - name: mongodb
   repository: https://kubernetes-charts.storage.googleapis.com
   version: 4.5.0
-digest: sha256:5071c7aa3cb20118c38597ee26ce4404458a9f8c203e8902776fa94d0bc39e64
-generated: 2019-03-05T15:45:58.340928+01:00
+- name: messaging
+  repository: https://qliktech.jfrog.io/qliktech/qlikhelm
+  version: 3.0.8
+digest: sha256:c54bddc4eb2d531893168e9a618be9216c47df15490d870643ef4cf3e5578d66
+generated: "2020-07-15T00:04:00.356606-04:00"

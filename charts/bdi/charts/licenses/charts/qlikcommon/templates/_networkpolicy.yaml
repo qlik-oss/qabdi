@@ -1,0 +1,91 @@
+{{- define "common.networkpolicy.tpl" -}}
+{{- $root := . -}}
+{{- include "common.networkpolicy.blockedCidr" . -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+{{ template "common.metadata" . }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ template "common.name" . }}
+      release: {{ .Release.Name }}
+  policyTypes:
+    - Egress
+    - Ingress
+  ingress:
+    - {}
+  egress:
+  - ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+  {{- if .Values.networkPolicy.ipBlock }}
+  - to:
+    - ipBlock:
+        cidr: {{ .Values.networkPolicy.ipBlock.allowedExtCidr }}
+        {{- if .Values.networkPolicy.ipBlock.blockedCidrs }}
+        except:
+        {{- if .Values.networkPolicy.ipBlock.blockedCidrs.defaultBlock }}
+        {{- range $root.defaultBlockedCidrs }}
+          - {{ . }}
+        {{- end }}
+        {{- end }}
+        {{- range .Values.networkPolicy.ipBlock.blockedCidrs.additionalBlockedCidrs }}
+          - {{ . }}
+        {{- end }}
+        {{- end }}
+    {{- if .Values.networkPolicy.ipBlock.allowedPorts }}
+    ports:
+      {{- range $ports := .Values.networkPolicy.ipBlock.allowedPorts }}
+      - port: {{ $ports.port }}
+        protocol: {{ $ports.protocol }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.configs }}{{- if .Values.configs.data }}
+  {{- range $key, $value := .Values.configs.data }}
+  {{- if contains "Uri" $key -}}
+  {{ include "common.networkpolicy.podSelection" (list $root $key $value) }}
+  {{- end }}
+  {{- end }}
+  {{- end }}{{- end }}
+
+  {{- if .Values.secrets }}{{- if .Values.secrets.stringData }}
+  {{- range $key, $value := .Values.secrets.stringData }}
+  {{- if contains "Uri" $key -}}{{- if not (contains "mongodbUri" $key) -}}
+  {{ include "common.networkpolicy.podSelection" (list $root $key $value) }}
+  {{- end }}{{- end }}
+  {{- end }}
+  {{- end }}{{- end }}
+
+  {{- if .Values.networkPolicy.podSelections }}{{- if .Values.networkPolicy.podSelections.additionalPodSelections }}
+  {{- range $appLabel, $value := .Values.networkPolicy.podSelections.additionalPodSelections }}
+  - to:
+    - podSelector:
+        matchLabels:
+          app: {{ $appLabel }}
+          release: {{ $value.release | default $root.Release.Name | quote }}
+          {{- if $value.additionalPodLabels -}}
+          {{- range $key, $val := $value.additionalPodLabels }}
+          {{ $key }}: {{ $val | quote }}
+          {{- end}}
+          {{- end}}
+      namespaceSelector:
+        matchLabels:
+          name: {{ $value.namespace | default $root.Release.Namespace | quote }}
+  {{- if $value.port }}
+    ports:
+      - protocol: TCP
+        port: {{ $value.port }}
+  {{- end }}
+  {{- end }}
+  {{- end }}{{- end }}
+{{- end }}
+
+{{- define "common.networkpolicy" -}}
+{{- $top := first . -}}
+{{- if and $top.Values.networkPolicy }}
+{{- template "common.util.merge" (append . "common.networkpolicy.tpl") -}}
+{{- end -}}
+{{- end -}}

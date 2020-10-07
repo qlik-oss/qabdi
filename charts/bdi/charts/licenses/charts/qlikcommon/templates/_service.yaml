@@ -1,0 +1,25 @@
+{{- define "common.service.tpl" -}}
+apiVersion: v1
+kind: Service
+{{ template "common.metadata" . }}
+  annotations:
+  {{- if .Values.service }}{{- if .Values.service.annotations }}
+    {{ include "common.annote" (dict "annotations" .Values.service.annotations "root" . ) | indent 4 }}
+  {{- end }}{{- end }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+  - name: {{ template "common.name" . }}
+    port: {{ .Values.service.port }}
+    targetPort: {{ .Values.service.port }}
+    protocol: TCP
+  selector:
+    app: {{ template "common.name" . }}
+    release: {{ .Release.Name | quote }}
+{{- end -}}
+{{- define "common.service" -}}
+{{- $top := first . -}}
+{{- if and $top.Values.service}}
+{{- template "common.util.merge" (append . "common.service.tpl") -}}
+{{- end -}}
+{{- end -}}

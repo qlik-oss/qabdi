@@ -1,7 +1,7 @@
 dependencies:
 - name: licenses
   repository: https://qliktech.jfrog.io/qliktech/qlikhelm
-  version: 1.21.5
+  version: 2.0.9
 - name: bdi-mc
   repository: https://qliktech.jfrog.io/qliktech/qlikhelm
   version: 0.2.19
@@ -17,5 +17,5 @@ dependencies:
 - name: minio
   repository: https://kubernetes-charts.storage.googleapis.com/
   version: 5.0.25
-digest: sha256:4164353d5b95464099978c7c2075a56091974dba6733c3e2328a7d69743bb67d
-generated: "2020-09-22T11:46:51.711766436Z"
+digest: sha256:4873b58face77352cf04347af286a37e3cfca6e26be2458e40ff4cf0c269c70f
+generated: "2020-09-30T17:06:59.296601+02:00"

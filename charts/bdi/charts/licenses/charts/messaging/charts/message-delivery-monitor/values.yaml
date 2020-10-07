@@ -1,0 +1,93 @@
+## Default values for the message-delivery-monitor Helm chart.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+## Sets service log level
+logLevel: info
+
+## NATS configuration
+##
+nats:
+  ## Comma seperated list of NATS servers
+  server: "nats://{{ .Release.Name }}-nats-client:4222"
+  ## For localdev use this configuration instead
+  # servers: "nats://messaging-nats-client:4222"
+
+  auth:
+    enabled: false
+    ## NATS client authentication user
+    ## user:
+    ## password:
+    secretName: "{{ .Release.Name }}-message-delivery-monitor-secret"
+    secretClientUser: "client-user"
+    secretClientPassword: "client-password"
+
+    monitor:
+      enabled: false
+      user: "delivery-monitor"
+      password: password
+
+## NATS Streaming configuration
+##
+stan:
+  ## NATS Streaming cluster ID
+  clusterID: "{{ .Release.Name }}-nats-streaming-cluster"
+  ## For localdev use this configuration instead
+  # clusterID: "messaging-nats-streaming-cluster"
+
+  ## Channels to send monitoring messages on
+  monitorChannel: "monitor-channel"
+
+image:
+  registry: qliktech-docker.jfrog.io
+  repository: message-delivery-monitor
+  tag: 0.1.2
+
+  ## Specify a imagePullPolicy: 'Always' if imageTag is 'latest', else set to 'IfNotPresent'.
+  ## ref: https://kubernetes.io/docs/user-guide/images/#pre-pulling-images
+  ##
+  # pullPolicy: IfNotPresent
+
+## Secrets for pulling images from a private Docker registry.
+##
+imagePullSecrets:
+  - name: artifactory-docker-secret
+
+## Number of replicas.
+##
+replicaCount: 1
+
+## Additional pod labels
+## ref: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+##
+podLabels:
+  ## Pod label required to allow communication with NATS
+  "{{ .Release.Name }}-nats-client": "true"
+  ## Pod label required to allow communication with NATS Streaming Monitoring endpoint
+  "{{ .Release.Name }}-nats-streaming-admin": "true"
+
+## Configure resource requests and limits
+## ref: http://kubernetes.io/docs/user-guide/compute-resources/
+##
+resources: {}
+# limits:
+#   cpu: 500m
+#   memory: 512Mi
+# requests:
+#   cpu: 100m
+#   memory: 256Mi
+
+## Service configuration.
+## ref: https://kubernetes.io/docs/user-guide/services
+##
+service:
+  type: ClusterIP
+  port: 8080
+
+## Metrics configuration
+##
+metrics:
+  ## Prometheus configuration
+  prometheus:
+    ## prometheus.enabled determines whether the annotations for prometheus scraping are included
+    enabled: true

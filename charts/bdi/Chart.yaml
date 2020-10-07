@@ -5,4 +5,4 @@ maintainers:
 - name: PA BDI
   url: https://qlikdev.slack.com/channels/dev-bdi-buildstatus
 name: bdi
-version: 6.4.14
+version: 6.5.0

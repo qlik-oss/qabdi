@@ -1,0 +1,107 @@
+{{- define "common.container.tpl" -}}
+{{- $root := . -}}
+{{- $name := default .Chart.Name .Values.nameOverride -}}
+{{- $releaseName := .Release.Name -}}
+{{- include "common.networkpolicy.blockedCidr" . -}}
+name: {{ include "common.name" . }}
+image: {{ include "common.image" (set . "container" .container ) }}
+{{- $pullPolicy := .Values.image.pullPolicy  }}
+{{- if .container }}{{- if .container.image }}{{- if .container.image.pullPolicy }}
+  {{- $pullPolicy = .container.image.pullPolicy }}
+{{- end }}{{- end }}{{- end }}
+imagePullPolicy: {{ $pullPolicy }}
+{{- if .container  }}{{- if .container.command }}
+command: ["{{ .container.command }}"]
+{{- end }}{{- end }}
+{{- if or .Values.configs .Values.secrets }}
+env:
+{{- if .Values.configs.data.natsUri }}
+  - name: NATS_CLIENT_ID
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+{{- end }}
+{{- if .Values.networkPolicy }}{{- if .Values.networkPolicy.ipBlock }}
+  - name: BLOCKED_CIDRS
+    value: "{{ join "," $root.allBlockedCidrs }}"
+{{- end }}{{- end }}
+{{ include "common.transformers" (set . "container" .container ) | indent 2 }}
+{{- end }}
+ports:
+{{- $port := .Values.service.port  }}
+{{- if .container }}{{- if .container.port }}
+  {{- $port = .container.port }}
+{{- end }}{{- end }}
+- containerPort: {{ $port }}
+{{ $secrets := .Values.secrets}}
+{{- if .container  }}{{- if .container.secrets }}
+{{ $secrets = .container.secrets}}
+{{- end }}{{- end }}
+{{- $hasSecret := false -}}
+{{- if $secrets.stringData }}
+{{- $hasSecret = true -}}
+{{- end }}
+{{- if $secrets.data }}
+{{- $hasSecret = true -}}
+{{- end }}
+{{- $hasVolumeMounts := false -}}
+{{- if .container  }}{{- if .container.volumeMounts }}
+{{- $hasVolumeMounts = true -}}
+{{- end -}}{{- end -}}
+{{- if or $hasSecret $hasVolumeMounts }}
+volumeMounts:
+{{- end }}
+{{- if $hasSecret }}
+{{- if or (contains $name $releaseName) (eq $releaseName "messaging") }}
+- name: {{ include "common.fullname" . }}-secrets
+  mountPath: "/run/secrets/qlik.com/{{ include "common.fullname" . }}"
+  readOnly: true
+{{- else }}
+- name: {{ include "common.fullname" . }}-secrets
+  mountPath: "/run/secrets/qlik.com/{{ include "common.fullname" . }}"
+  readOnly: true
+- name: {{ .Release.Name }}-secrets
+  mountPath: "/run/secrets/qlik.com/{{ .Release.Name }}"
+  readOnly: true
+{{- end }}
+{{- end }}
+{{- if $hasVolumeMounts }}
+{{- range $key, $val:= .container.volumeMounts }}
+{{- if kindIs "map" $val }}
+{{- if eq $key "default" }}
+{{ include "common.volume.mount" (list (include "common.fullname" $root) $val) }}
+{{- else }}
+{{ include "common.volume.mount" (list (printf "%s-%s" (include "common.fullname" $root) $key) $val) }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- include "common.ca-certificates.volumeMount" . }}
+{{- $probes := .Values.probes }}
+{{- if .container }}{{- if .container.probes }}
+  {{- $probes = .container.probes }}
+{{- end }}{{- end }}
+livenessProbe:
+  httpGet:
+    path: /health
+    port: {{ $port }}
+{{- if $probes }}
+{{ toYaml $probes | indent 2 }}
+{{- end }}
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: {{ $port }}
+{{- if $probes }}
+{{ toYaml $probes | indent 2 }}
+{{- end }}
+{{- if .container  }}{{- if .container.resources  }}
+resources:
+{{ toYaml .container.resources | indent 2 }}
+{{- end -}}{{- end -}}
+{{- end -}}
+{{- define "common.container" -}}
+{{- /* clear new line so indentation works correctly */ -}}
+{{- println "" -}}
+{{- include "common.util.merge" (append . "common.container.tpl") | indent 8 -}}
+{{- end -}}
