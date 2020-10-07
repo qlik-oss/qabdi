@@ -9,7 +9,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Add helm repo
+        run: |
+          helm init
+          helm helm repo add qlik https://qlik-oss.github.io/qabdi/
+                                                          
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.0.0
         env:
