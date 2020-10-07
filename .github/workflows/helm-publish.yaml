@@ -17,7 +17,7 @@ jobs:
           helm repo add qlik https://qliktech.jfrog.io/qliktech/qlikhelm --username ${{ secrets.ARTIFACTORY_USERNAME }} --password ${{ secrets.ARTIFACTORY_PASSWORD}}
 
       - name: Run helm-gh-pages-action
-       uses: J12934/helm-gh-pages-action@master
+        uses: J12934/helm-gh-pages-action@master
         with:
           charts-folder: helm
           access-token: ${{ secrets.ACCESS_TOKEN }}
