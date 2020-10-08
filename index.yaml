@@ -3,7 +3,7 @@ entries:
   bdi:
   - apiVersion: v1
     appVersion: 6.78.0
-    created: "2020-10-08T14:37:23.215232415Z"
+    created: "2020-10-08T15:09:12.357875229Z"
     dependencies:
     - name: licenses
       repository: '@qlik'
@@ -31,7 +31,7 @@ entries:
       repository: https://kubernetes-charts.storage.googleapis.com/
       version: 5.0.25
     description: Big Data Index
-    digest: d81c44fc90be133fd8c8e75a9dbc0e1ec6a17365b8d5a3f318c17f00ac7bdcc1
+    digest: bee9ea677982314e92a9c03d5a004546f8a8c952cff44bc67751889e7ccb6f6b
     maintainers:
     - name: PA BDI
       url: https://qlikdev.slack.com/channels/dev-bdi-buildstatus
@@ -39,46 +39,4 @@ entries:
     urls:
     - bdi-6.5.0.tgz
     version: 6.5.0
-  - apiVersion: v1
-    appVersion: 5.1.0
-    created: "2020-10-08T14:37:23.181927296Z"
-    dependencies:
-    - condition: nginx-ingress.enabled
-      name: nginx-ingress
-      repository: https://kubernetes-charts.storage.googleapis.com/
-      version: 1.10.3
-    - condition: redis-ha.enabled
-      name: redis-ha
-      repository: https://kubernetes-charts.storage.googleapis.com/
-      version: 3.6.1
-    description: Big Data Index
-    digest: 1f158c1fc6c0954976e04e90a0968baa8bf52f58acad529e1c83be0c6ab300b8
-    maintainers:
-    - name: PA BDI
-      url: https://qlikdev.slack.com/channels/dev-bdi-buildstatus
-    name: bdi
-    urls:
-    - bdi-5.0.1.tgz
-    version: 5.0.1
-  - apiVersion: v1
-    appVersion: 4.191.39
-    created: "2020-10-08T14:37:23.171138369Z"
-    dependencies:
-    - condition: nginx-ingress.enabled
-      name: nginx-ingress
-      repository: https://kubernetes-charts.storage.googleapis.com/
-      version: 1.39.0
-    - condition: redis-ha.enabled
-      name: redis-ha
-      repository: https://kubernetes-charts.storage.googleapis.com/
-      version: 3.6.1
-    description: Big Data Index
-    digest: c8254326561af67bee31563543c9a9a6f0f7ec21c6aa72f3fc6ab526607848f3
-    maintainers:
-    - name: PA BDI
-      url: https://qlikdev.slack.com/channels/dev-bdi-buildstatus
-    name: bdi
-    urls:
-    - bdi-4.19.18.tgz
-    version: 4.19.18
-generated: "2020-10-08T14:37:23.157747539Z"
+generated: "2020-10-08T15:09:12.324998897Z"
