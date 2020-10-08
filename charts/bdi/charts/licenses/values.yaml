@@ -3,7 +3,7 @@ image:
   ## Will be overridden by `global.imageRegistry` if set
   registry: ghcr.io
   ## Component's image name.
-  repository: qlik-osslicenses
+  repository: qlik-oss/licenses
   ## Licenses image version.
   ## ref: https://hub.docker.com/r/qlik/licenses/tags/
   ##
@@ -107,7 +107,7 @@ deployment:
   election:
     image:
       registry: ghcr.io
-      repository: leader-elector
+      repository: qlik-oss/leader-elector
       tag: "1.8.0"
     ## election configs
     configs:

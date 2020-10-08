@@ -5,7 +5,7 @@
 
 image:
   registry: ghcr.io
-  repository: qlik-ossbdi-mc
+  repository: qlik-oss/bdi-mc
   tag: 1.2.0
   # pullPolicy: IfNotPresent
 
